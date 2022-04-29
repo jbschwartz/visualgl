@@ -6,7 +6,7 @@ authors = ["James Schwartz"]
 
 [tool.poetry.dependencies]
 python = "~3.9"
-spatial = { git = "https://github.com/jbschwartz/spatial.git" }
+spatial = { git = "https://github.com/jbschwartz/spatial.git", tag="v0.3.0" }
 glfw = "^2.5.3"
 numpy = "^1.22.3"
 PyOpenGL = "^3.1.6"
