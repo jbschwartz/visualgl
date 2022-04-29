@@ -2,6 +2,7 @@ import enum
 
 from OpenGL.GL import *
 
+
 # TODO: Need to handle other types of shaders I'm sure.
 class ShaderType(enum.Enum):
     VERTEX = GL_VERTEX_SHADER

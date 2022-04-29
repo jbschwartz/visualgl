@@ -1,9 +1,9 @@
-from OpenGL.GL import *
-
 from typing import Iterable
 
-from ..log import logger
+from OpenGL.GL import *
+
 from ..frozen_dict import FrozenDict
+from ..log import logger
 from ..utils import raise_if
 from .shader import Shader, ShaderType
 from .uniform import Uniform

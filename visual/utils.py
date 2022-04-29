@@ -1,7 +1,6 @@
 import math
-
-from typing import Union
 from numbers import Number
+from typing import Union
 
 
 def clamp_angle(angle):

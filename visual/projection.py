@@ -1,4 +1,5 @@
-import abc, math
+import abc
+import math
 
 from spatial import Matrix4, Vector3
 

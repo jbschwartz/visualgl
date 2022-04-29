@@ -1,14 +1,13 @@
-import numpy as np
-
 from copy import deepcopy
 from ctypes import c_void_p
 from typing import Iterable
 
-from ..log import logger
-from spatial import Mesh, Vector3
-from .shader_program import ShaderProgram
-
+import numpy as np
 from OpenGL.GL import *
+from spatial import Mesh, Vector3
+
+from ..log import logger
+from .shader_program import ShaderProgram
 
 MESH_BUFFER_ATTRS = {
     "position": {"type": GL_FLOAT, "number_of_components": 3},

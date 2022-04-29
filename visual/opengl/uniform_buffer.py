@@ -1,9 +1,8 @@
 from collections import namedtuple
-from OpenGL.GL import *
 from typing import Iterable
 
 import numpy as np
-
+from OpenGL.GL import *
 from spatial import Matrix4, Transform, Vector3
 
 Mapping = namedtuple("Mapping", "object fields")

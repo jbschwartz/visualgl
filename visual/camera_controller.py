@@ -1,9 +1,13 @@
-import enum, json, math, glfw
+import enum
+import json
+import math
 
+import glfw
 from spatial import Transform, vector3
+
 from .camera import Camera, OrbitType
-from .messaging.listener import listen, listener
 from .messaging.event import Event
+from .messaging.listener import listen, listener
 from .projection import OrthoProjection, PerspectiveProjection
 
 Vector3 = vector3.Vector3

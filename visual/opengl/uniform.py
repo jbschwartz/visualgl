@@ -2,9 +2,10 @@ from typing import Callable
 
 from OpenGL.GL import *
 
-from ..log import logger
-from .exceptions import UniformArraySizeError, UniformTypeError, UniformSizeError
 import visual.opengl.decorators as decorators
+
+from ..log import logger
+from .exceptions import UniformArraySizeError, UniformSizeError, UniformTypeError
 
 GL_TYPE_UNIFORM_FN = {
     GL_INT: decorators.primative(glUniform1iv, int),

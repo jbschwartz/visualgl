@@ -4,15 +4,16 @@ import math
 import OpenGL.GL as gl
 from spatial import Matrix4, Vector3
 
-from .camera_controller import CameraController, CameraSettings
-from .ambient_light import AmbientLight
-from .renderer import Renderer
-from .bindings import Bindings
-from .simulation import Simulation
 from visual import Camera, Window
 from visual.opengl.buffer import Buffer
 from visual.opengl.shader_program import ShaderProgram
 from visual.opengl.uniform_buffer import Mapping, UniformBuffer
+
+from .ambient_light import AmbientLight
+from .bindings import Bindings
+from .camera_controller import CameraController, CameraSettings
+from .renderer import Renderer
+from .simulation import Simulation
 
 
 def triangle(

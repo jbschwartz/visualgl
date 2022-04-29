@@ -1,14 +1,14 @@
-import glfw, sys
-
+import sys
 from typing import Optional
 
+import glfw
 from OpenGL.GL import GL_TRUE
-
 from spatial import Vector3
+
 from .messaging.emitter import emitter
 from .messaging.event import Event
-from .utils import sign
 from .timer import Timer
+from .utils import sign
 
 
 @emitter

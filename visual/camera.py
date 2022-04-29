@@ -1,8 +1,10 @@
-import enum, math
+import enum
+import math
 
-from .utils import safe_acos
-from spatial import AABB, vector3, Ray, Transform
+from spatial import AABB, Ray, Transform, vector3
+
 from .projection import OrthoProjection, PerspectiveProjection, Projection
+from .utils import safe_acos
 
 Vector3 = vector3.Vector3
 

@@ -3,6 +3,7 @@ from typing import Callable
 from .event import Event
 from .registry import registry
 
+
 # TODO: Maybe allow the listen decorator to accept parameters that allow the function to listen conditionally
 # e.g. @listen(Event.KEY, glfw.KEY_SPACE) would only listen to spacebar
 def listen(*events: Event) -> Callable:

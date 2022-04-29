@@ -1,11 +1,14 @@
-import glfw, math, statistics
-
+import math
+import statistics
 from collections import deque
 
-from .log import logger
+import glfw
 from spatial import AABB, Intersection, Ray
-from visual.messaging.listener import listen, listener
+
 from visual.messaging.event import Event
+from visual.messaging.listener import listen, listener
+
+from .log import logger
 
 
 @listener
