@@ -1,3 +1,4 @@
+import logging
 from copy import deepcopy
 from ctypes import c_void_p
 from typing import Iterable
@@ -6,8 +7,9 @@ import numpy as np
 from OpenGL.GL import *
 from spatial import Mesh, Vector3
 
-from ..log import logger
 from .shader_program import ShaderProgram
+
+logger = logging.getLogger(__name__)
 
 MESH_BUFFER_ATTRS = {
     "position": {"type": GL_FLOAT, "number_of_components": 3},

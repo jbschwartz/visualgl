@@ -1,3 +1,4 @@
+import logging
 import math
 import statistics
 from collections import deque
@@ -8,7 +9,7 @@ from spatial import AABB, Intersection, Ray
 from visual.messaging.event import Event
 from visual.messaging.listener import listen, listener
 
-from .log import logger
+logger = logging.getLogger(__name__)
 
 
 @listener

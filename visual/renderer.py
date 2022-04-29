@@ -1,9 +1,9 @@
+import logging
 from collections import namedtuple
 from typing import Callable, Iterable
 
 from OpenGL.GL import *
 
-from .log import logger
 from .messaging.event import Event
 from .messaging.listener import listen, listener
 from .opengl.buffer import Buffer
@@ -11,6 +11,8 @@ from .opengl.shader import ShaderType
 from .opengl.shader_program import ShaderProgram
 
 Entity = namedtuple("Entity", "name shader draw_mode buffer instances per_instance add_children")
+
+logger = logging.getLogger(__name__)
 
 
 @listener

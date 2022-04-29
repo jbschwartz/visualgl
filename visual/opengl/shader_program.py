@@ -1,13 +1,15 @@
+import logging
 from typing import Iterable
 
 from OpenGL.GL import *
 
 from ..frozen_dict import FrozenDict
-from ..log import logger
 from ..utils import raise_if
 from .shader import Shader, ShaderType
 from .uniform import Uniform
 from .uniform_buffer import UniformBuffer
+
+logger = logging.getLogger(__name__)
 
 
 class UniformDict:

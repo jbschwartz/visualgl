@@ -1,11 +1,13 @@
+import logging
 from typing import Callable
 
 from OpenGL.GL import *
 
 import visual.opengl.decorators as decorators
 
-from ..log import logger
 from .exceptions import UniformArraySizeError, UniformSizeError, UniformTypeError
+
+logger = logging.getLogger(__name__)
 
 GL_TYPE_UNIFORM_FN = {
     GL_INT: decorators.primative(glUniform1iv, int),
