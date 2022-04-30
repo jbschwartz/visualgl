@@ -1,4 +1,5 @@
 import logging
+import os
 from typing import Iterable
 
 from OpenGL.GL import *
@@ -13,7 +14,8 @@ logger = logging.getLogger(__name__)
 
 
 class UniformDict:
-    def __init__(self, d: dict) -> None:
+    def __init__(self, program_id, d: dict) -> None:
+        self.__dict__["program_id"] = program_id
         self.__dict__["_uniforms"] = FrozenDict(d)
         self.__dict__["_already_logged"] = []
 
@@ -28,7 +30,7 @@ class UniformDict:
 
             uniforms[uniform.name] = uniform
 
-        return cls(uniforms)
+        return cls(program_id, uniforms)
 
     def __getattr__(self, name):
         return getattr(self._uniforms, name)
@@ -40,11 +42,13 @@ class UniformDict:
         except AttributeError:
             if name not in self._already_logged:
                 self._already_logged.append(name)
-                logger.warning(f"Setting uniform {name} that does not exist")
+                logger.warning(
+                    f"Setting uniform `{name}` that does not exist in program {self.program_id}"
+                )
 
 
 class ShaderProgram:
-    DEFAULT_FOLDER = "./visual/glsl/"
+    DEFAULT_FOLDER = "../glsl/"
     DEFAULT_EXTENSION = ".glsl"
 
     def __init__(self, name, shaders: Iterable[Shader]) -> None:
@@ -52,6 +56,8 @@ class ShaderProgram:
 
         #  Used for warning/error messaging
         self.name = name
+
+        logger.debug(f"Shader program `{self.name}` assigned ID {self.id}")
 
         for shader in shaders:
             glAttachShader(self.id, shader.id)
@@ -62,7 +68,8 @@ class ShaderProgram:
 
     @classmethod
     def get_shader_file_path(cls, file_name: str) -> str:
-        return cls.DEFAULT_FOLDER + file_name + cls.DEFAULT_EXTENSION
+        dirname = os.path.dirname(__file__)
+        return os.path.join(dirname, cls.DEFAULT_FOLDER) + file_name + cls.DEFAULT_EXTENSION
 
     @classmethod
     def from_file_name(cls, file_name: str) -> "ShaderProgram":
