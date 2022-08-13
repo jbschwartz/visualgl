@@ -67,14 +67,16 @@ class ShaderProgram:
         self.uniforms = UniformDict.from_program(self.id)
 
     @classmethod
-    def get_shader_file_path(cls, file_name: str) -> str:
+    def get_shader_file_path(cls) -> str:
         dirname = os.path.dirname(__file__)
-        return os.path.join(dirname, cls.DEFAULT_FOLDER) + file_name + cls.DEFAULT_EXTENSION
+        return os.path.join(dirname, cls.DEFAULT_FOLDER)
 
     @classmethod
-    def from_file_name(cls, file_name: str) -> "ShaderProgram":
+    def from_file_name(cls, file_name: str, shader_dir: str) -> "ShaderProgram":
         """Open a glsl file with the given file name and create a ShaderProgram."""
-        with open(cls.get_shader_file_path(file_name)) as file:
+        directory = shader_dir or cls.get_shader_file_path()
+        path = os.path.join(directory, file_name + cls.DEFAULT_EXTENSION)
+        with open(path) as file:
             source = file.read()
 
         shaders = [Shader(shader_type, source) for shader_type in ShaderType]
@@ -82,10 +84,15 @@ class ShaderProgram:
         return cls(file_name, shaders)
 
     @classmethod
-    def from_file_names(cls, shader_name: str, file_names_by_type: dict) -> "ShaderProgram":
+    def from_file_names(
+        cls, shader_name: str, file_names_by_type: dict, shader_dir: str
+    ) -> "ShaderProgram":
+        directory = shader_dir or cls.get_shader_file_path()
+
         shaders = []
         for shader_type, file_name in file_names_by_type.items():
-            with open(cls.get_shader_file_path(file_name)) as file:
+            path = os.path.join(directory, file_name + cls.DEFAULT_EXTENSION)
+            with open(path) as file:
                 source = file.read()
 
             shaders.append(Shader(shader_type, source))

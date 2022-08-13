@@ -81,12 +81,12 @@ class Renderer:
         if width and height:
             glViewport(0, 0, width, height)
 
-    def initialize_shader(self, shader_name: str) -> None:
+    def initialize_shader(self, shader_name: str, shader_dir: str) -> None:
         if shader_name in self.shaders:
             return
 
         try:
-            self.shaders[shader_name] = ShaderProgram.from_file_name(shader_name)
+            self.shaders[shader_name] = ShaderProgram.from_file_name(shader_name, shader_dir)
         except FileNotFoundError:
             # Single file not found. Instead look for individual files.
             abbreviation = lambda type_name: type_name[0].lower()
@@ -97,7 +97,9 @@ class Renderer:
             }
 
             try:
-                self.shaders[shader_name] = ShaderProgram.from_file_names(shader_name, file_names)
+                self.shaders[shader_name] = ShaderProgram.from_file_names(
+                    shader_name, file_names, shader_dir
+                )
             except FileNotFoundError:
                 logger.error(f"Shader program `{shader_name}` not found")
                 raise
@@ -109,6 +111,7 @@ class Renderer:
         per_instance: Callable,
         add_children: Callable = None,
         shader_name: str = None,
+        shader_dir: str = None,
         draw_mode: int = None,
     ) -> None:
         if self.entities.get(name, None) is not None:
@@ -118,7 +121,7 @@ class Renderer:
         shader_name = shader_name or name
 
         try:
-            self.initialize_shader(shader_name)
+            self.initialize_shader(shader_name, shader_dir)
         except FileNotFoundError:
             return logger.error(f"Entity type `{name}` creation failed")
 
