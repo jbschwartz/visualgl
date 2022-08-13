@@ -7,16 +7,16 @@ authors = ["James Schwartz"]
 [tool.poetry.dependencies]
 python = "~3.9"
 spatial = { git = "https://github.com/jbschwartz/spatial.git", tag="v0.3.0" }
-glfw = "^2.5.3"
-numpy = "^1.22.3"
+glfw = "^2.5.4"
+numpy = "^1.23.1"
 PyOpenGL = "^3.1.6"
 
 [tool.poetry.dev-dependencies]
-black = "^22.3.0"
-mypy = "^0.950"
+black = "^22.6.0"
+mypy = "^0.971"
 pydocstyle = "^6.1.1"
-pylint = "^2.13.7"
-coverage = "^6.3.2"
+pylint = "^2.14.5"
+coverage = "^6.4.3"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
