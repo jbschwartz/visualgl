@@ -5,8 +5,8 @@ description = "OpenGL in Python."
 authors = ["James Schwartz"]
 
 [tool.poetry.dependencies]
-python = "~3.9"
-spatial = { git = "https://github.com/jbschwartz/spatial.git", tag="v0.3.0" }
+python = "^3.8"
+spatial = { git = "https://github.com/jbschwartz/spatial.git", tag="v0.4.0" }
 glfw = "^2.5.4"
 numpy = "^1.23.1"
 PyOpenGL = "^3.1.6"
