@@ -1,8 +1,0 @@
-name: visual
-channels:
-  - defaults
-dependencies:
-  - python=3.9
-  - pip
-  - pip:
-    - poetry
