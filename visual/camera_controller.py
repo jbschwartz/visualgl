@@ -128,10 +128,7 @@ class CameraController:
         elif command == "scale":
             self.try_scale(self.settings.SCALE_SPEED * cursor_delta.y)
         elif command == "orbit":
-            # TODO: Maybe do something with speed scaling.
-            # It's hard to orbit slowly and precisely when the orbit speed is set where it needs to be for general purpose orbiting
-            # The steps are too large and it looks choppy.
-            angle = self.settings.ORBIT_SPEED * vector3.normalize(cursor_delta)
+            angle = self.settings.ORBIT_SPEED * cursor_delta
             self.camera.orbit(self.target, angle.y, angle.x, self.orbit_type)
 
     @listen(Event.KEY)
