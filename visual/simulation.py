@@ -25,7 +25,7 @@ class Simulation:
         """Get the AABB for all simulation entities."""
         aabbs = [entity.aabb for entity in self.entities if hasattr(entity, "aabb")]
 
-        return AABB.from_aabbs(aabbs)
+        return AABB(aabbs)
 
     def intersect(self, ray: Ray) -> Intersection:
         """Intersect a ray with all Simulation entities and return closest found Intersection. Return Intersection.Miss() for no intersection."""
