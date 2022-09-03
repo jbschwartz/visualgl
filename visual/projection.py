@@ -51,7 +51,7 @@ class Projection(abc.ABC):
 
 
 class OrthoProjection(Projection):
-    WIDTH_MIN = 100
+    WIDTH_MIN = 0.01
     WIDTH_MAX = 10000
 
     def __init__(self, aspect, width, near_clip=100, far_clip=10000):

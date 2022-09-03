@@ -1,6 +1,7 @@
 import enum
 import json
 import math
+import pathlib
 
 import glfw
 from spatial import Transform, vector3
@@ -16,7 +17,7 @@ Vector3 = vector3.Vector3
 class CameraSettings:
     class Defaults(enum.Enum):
         # TODO: This shouldn't be a setting. The caller should pass the path.
-        FILE_PATH = "./visual/settings.json"
+        FILE_PATH = str(pathlib.Path(__file__).parent.resolve()) + "\settings.json"
         ORBIT_SPEED = 0.05
         ROLL_SPEED = 0.005
         SCALE_SPEED = 5
