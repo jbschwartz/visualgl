@@ -218,6 +218,14 @@ optional = false
 python-versions = "*"
 
 [[package]]
+name = "PyOpenGL-accelerate"
+version = "3.1.6"
+description = "Acceleration code for PyOpenGL"
+category = "main"
+optional = true
+python-versions = "*"
+
+[[package]]
 name = "snowballstemmer"
 version = "2.2.0"
 description = "This package provides 29 stemmers for 28 languages generated from Snowball algorithms."
@@ -273,10 +281,13 @@ category = "dev"
 optional = false
 python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,>=2.7"
 
+[extras]
+extras = ["PyOpenGL-accelerate"]
+
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "2752b54538d5de26acbeb30d26686077fd5e1d267a658f6cae2b2ea4c8293eff"
+content-hash = "8c4532008a3f1452f671e750459cc07fe2e02f3c91bb6de20289034ca6d1d0e4"
 
 [metadata.files]
 astroid = [
@@ -509,6 +520,22 @@ PyOpenGL = [
     {file = "PyOpenGL-3.1.6-py2-none-any.whl", hash = "sha256:57c597d989178e1413002df6b923619f6d29807501dece1c60cc6f12c0c8e8a7"},
     {file = "PyOpenGL-3.1.6-py3-none-any.whl", hash = "sha256:a7139bc3e15d656feae1f7e3ef68c799941ed43fadc78177a23db7e946c20738"},
     {file = "PyOpenGL-3.1.6.tar.gz", hash = "sha256:8ea6c8773927eda7405bffc6f5bb93be81569a7b05c8cac50cd94e969dce5e27"},
+]
+PyOpenGL-accelerate = [
+    {file = "PyOpenGL_accelerate-3.1.6-cp27-cp27m-win32.whl", hash = "sha256:bf2ab411f5a8b60be82b950e173732ecc90d68cfb1f96fe514a0137ae2f5c014"},
+    {file = "PyOpenGL_accelerate-3.1.6-cp27-cp27m-win_amd64.whl", hash = "sha256:bb05c5700e6e7dc47e04c7cf0b7ca917029d61968b9b3ea0702870cea831908f"},
+    {file = "PyOpenGL_accelerate-3.1.6-cp310-cp310-win32.whl", hash = "sha256:02625dc72a5813bc4ecfc95d8d6d8f47668d29e03a469af376cabe8c9a41efda"},
+    {file = "PyOpenGL_accelerate-3.1.6-cp310-cp310-win_amd64.whl", hash = "sha256:3f178eddf12f4b248469d363ae2c4f1cc0ea0335f9a6703da2fb4c44e21a88b4"},
+    {file = "PyOpenGL_accelerate-3.1.6-cp35-cp35m-win32.whl", hash = "sha256:f05628ea4c2425c0dcaabfb54747e209becdc8a6322d192c78ea5df7e1360d4a"},
+    {file = "PyOpenGL_accelerate-3.1.6-cp35-cp35m-win_amd64.whl", hash = "sha256:c531775131936e8d46bee4520fd938b89286aa8bb8f251b154dfd101e717ffc4"},
+    {file = "PyOpenGL_accelerate-3.1.6-cp36-cp36m-win32.whl", hash = "sha256:7550f8049788c16f3a0ec3ffdc0c75ed0b6cf995661fa046cdec7753e34b202f"},
+    {file = "PyOpenGL_accelerate-3.1.6-cp36-cp36m-win_amd64.whl", hash = "sha256:9311e0abfcca752bf94ba18c360f1d69b6bd3188fb946dd58fb84138bac038ba"},
+    {file = "PyOpenGL_accelerate-3.1.6-cp37-cp37m-win32.whl", hash = "sha256:c070e40154b4bb472e55ac7b30e170f6224d525111872f9af01ea1f67089c5bc"},
+    {file = "PyOpenGL_accelerate-3.1.6-cp37-cp37m-win_amd64.whl", hash = "sha256:7eda1eeda3782d6dab2a86145a6511fa9f08b56ba1c593fb480a74477c5d7361"},
+    {file = "PyOpenGL_accelerate-3.1.6-cp38-cp38-win32.whl", hash = "sha256:16d74e60229e94b596d7c280577638d77f2900bd80a4dc325f6d1039376c82fe"},
+    {file = "PyOpenGL_accelerate-3.1.6-cp38-cp38-win_amd64.whl", hash = "sha256:95346d10db577ba42587677f8071408258b16c55ee7c1cc549ae8ecdf3d893dd"},
+    {file = "PyOpenGL_accelerate-3.1.6-cp39-cp39-win32.whl", hash = "sha256:1011841fed437d6d4b8ed77dde62eb2a0dc0b1cf6feb9805bb2a2481b1017384"},
+    {file = "PyOpenGL_accelerate-3.1.6-cp39-cp39-win_amd64.whl", hash = "sha256:2c6d5bbff45d76125ff684b9231442668f9d7101175568bd1da1d54c8ade725f"},
 ]
 snowballstemmer = [
     {file = "snowballstemmer-2.2.0-py2.py3-none-any.whl", hash = "sha256:c8e1716e83cc398ae16824e5572ae04e0d9fc2c6b985fb0f900f5f0c96ecba1a"},
