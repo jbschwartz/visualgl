@@ -4,7 +4,7 @@ import statistics
 from collections import deque
 
 import glfw
-from spatial import AABB, Intersection, Ray
+from spatial3d import AABB, Intersection, Ray
 
 from visual.messaging.event import Event
 from visual.messaging.listener import listen, listener

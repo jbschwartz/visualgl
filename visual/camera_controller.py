@@ -4,7 +4,7 @@ import math
 import pathlib
 
 import glfw
-from spatial import Transform, vector3
+from spatial3d import Transform, vector3
 
 from .camera import Camera, OrbitType
 from .messaging.event import Event

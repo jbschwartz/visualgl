@@ -3,7 +3,7 @@ from typing import Iterable
 
 import numpy as np
 from OpenGL.GL import *
-from spatial import Matrix4, Transform, Vector3
+from spatial3d import Matrix4, Transform, Vector3
 
 Mapping = namedtuple("Mapping", "object fields")
 Field = namedtuple("Field", "underlying_type alignment size_in_bytes")

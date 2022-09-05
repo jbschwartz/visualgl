@@ -6,10 +6,10 @@ authors = ["James Schwartz"]
 
 [tool.poetry.dependencies]
 python = "^3.8"
-spatial = { git = "https://github.com/jbschwartz/spatial.git", tag="v0.6.2" }
 glfw = "^2.5.4"
 numpy = "^1.23.1"
 PyOpenGL = "^3.1.6"
+spatial3d = "^0.7.0"
 
 [tool.poetry.dev-dependencies]
 black = "^22.6.0"

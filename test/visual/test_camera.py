@@ -1,7 +1,7 @@
 import math
 import unittest
 
-from spatial import Vector3
+from spatial3d import Vector3
 
 from visual import Camera
 

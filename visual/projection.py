@@ -1,7 +1,7 @@
 import abc
 import math
 
-from spatial import Matrix4, Vector3
+from spatial3d import Matrix4, Vector3
 
 
 class Projection(abc.ABC):

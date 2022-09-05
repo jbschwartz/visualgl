@@ -1,7 +1,7 @@
 from numbers import Number
 from typing import Callable, Iterable, Union
 
-from spatial import Matrix4, Transform, Vector3
+from spatial3d import Matrix4, Transform, Vector3
 
 from ..utils import raise_if
 from .exceptions import UniformArraySizeError, UniformSizeError, UniformTypeError

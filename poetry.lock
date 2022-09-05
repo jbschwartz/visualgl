@@ -226,19 +226,12 @@ optional = false
 python-versions = "*"
 
 [[package]]
-name = "spatial"
-version = "0.6.2"
+name = "spatial3d"
+version = "0.7.0"
 description = "A Python library for representing and working with 3D objects."
 category = "main"
 optional = false
-python-versions = "^3.8"
-develop = false
-
-[package.source]
-type = "git"
-url = "https://github.com/jbschwartz/spatial.git"
-reference = "v0.6.2"
-resolved_reference = "69196b7e2c9b860967bd886d7732df0c0e707db0"
+python-versions = ">=3.8,<4.0"
 
 [[package]]
 name = "toml"
@@ -283,7 +276,7 @@ python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,>=2.7"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "8b2fc576541fa8d942ec4e37ad720ee2a4ab94e317844c653b23a26b6609ccdb"
+content-hash = "2752b54538d5de26acbeb30d26686077fd5e1d267a658f6cae2b2ea4c8293eff"
 
 [metadata.files]
 astroid = [
@@ -521,7 +514,10 @@ snowballstemmer = [
     {file = "snowballstemmer-2.2.0-py2.py3-none-any.whl", hash = "sha256:c8e1716e83cc398ae16824e5572ae04e0d9fc2c6b985fb0f900f5f0c96ecba1a"},
     {file = "snowballstemmer-2.2.0.tar.gz", hash = "sha256:09b16deb8547d3412ad7b590689584cd0fe25ec8db3be37788be3810cbf19cb1"},
 ]
-spatial = []
+spatial3d = [
+    {file = "spatial3d-0.7.0-py3-none-any.whl", hash = "sha256:f36e31bd4bcd244929db3ca75a9c98364ed47731f30b386d5346eb4ea958a2ff"},
+    {file = "spatial3d-0.7.0.tar.gz", hash = "sha256:c52f85f07b7b5af76ef8ac5b76758df95a46bf653c6e250677815fdc9cbcf62a"},
+]
 toml = [
     {file = "toml-0.10.2-py2.py3-none-any.whl", hash = "sha256:806143ae5bfb6a3c6e736a764057db0e6a0e05e338b5630894a5f779cabb4f9b"},
     {file = "toml-0.10.2.tar.gz", hash = "sha256:b3bda1d108d5dd99f4a20d24d9c348e91c4db7ab1b749200bded2f839ccbe68f"},

@@ -1,7 +1,7 @@
 import enum
 import struct
 
-from spatial import Facet, Mesh, vector3
+from spatial3d import Facet, Mesh, vector3
 
 from visual.exceptions import *
 from visual.timer import Timer
@@ -81,7 +81,7 @@ class STLParser:
 
         self.current = {
             "state": ParserState.PARSE_SOLID,
-            # TODO: The ASCII parser is completely broken by changes to spatial >=0.2.0.
+            # TODO: The ASCII parser is completely broken by changes to spatial3d >=0.2.0.
             "facet": None,  # Facet(),
             "line": 1,
         }

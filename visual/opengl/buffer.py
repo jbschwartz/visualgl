@@ -5,7 +5,7 @@ from typing import Iterable
 
 import numpy as np
 from OpenGL.GL import *
-from spatial import Mesh, Vector3
+from spatial3d import Mesh, Vector3
 
 from .shader_program import ShaderProgram
 

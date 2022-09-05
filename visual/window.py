@@ -3,7 +3,7 @@ from typing import Optional
 
 import glfw
 from OpenGL.GL import GL_TRUE
-from spatial import Vector3
+from spatial3d import Vector3
 
 from .messaging.emitter import emitter
 from .messaging.event import Event
