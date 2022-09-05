@@ -3,7 +3,7 @@ from typing import Callable
 
 from OpenGL.GL import *
 
-import visual.opengl.decorators as decorators
+import visualgl.opengl.decorators as decorators
 
 from .exceptions import UniformArraySizeError, UniformSizeError, UniformTypeError
 

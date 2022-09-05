@@ -1,4 +1,4 @@
-# visual v0.0.0 ![Badge](https://github.com/jbschwartz/visual/actions/workflows/ci.yml/badge.svg)
+# visualgl v0.0.0 ![Badge](https://github.com/jbschwartz/visualgl/actions/workflows/ci.yml/badge.svg)
 A Python library for visualizations with OpenGL.
 
 **Note: This library is currently being factored out from the [robotpy](https://github.com/jbschwartz/robotpy) application and is still very experimental.**
@@ -8,11 +8,11 @@ A Python library for visualizations with OpenGL.
 Install using `pip`:
 
 ```
-python -m pip install visual
+python -m pip install visualgl
 ```
 
 Install using `poetry`:
 
 ```
-poetry add visual
+poetry add visualgl
 ```

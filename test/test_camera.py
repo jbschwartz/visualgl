@@ -3,7 +3,7 @@ import unittest
 
 from spatial3d import Vector3
 
-from visual import Camera
+from visualgl import Camera
 
 
 class TestCamera(unittest.TestCase):

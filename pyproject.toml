@@ -1,13 +1,13 @@
 [tool.poetry]
-name = "visual"
+name = "visualgl"
 version = "0.0.1"
 description = "A Python library for visualizations with OpenGL."
 authors = ["James Schwartz <james@schwartz.engineer>"]
 keywords = ["opengl", "glfw", "3d", "scene", "mesh"]
 readme = "README.md"
 license = "MIT"
-homepage = "https://github.com/jbschwartz/visual"
-repository = "https://github.com/jbschwartz/visual"
+homepage = "https://github.com/jbschwartz/visualgl"
+repository = "https://github.com/jbschwartz/visualgl"
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Programming Language :: Python :: 3",

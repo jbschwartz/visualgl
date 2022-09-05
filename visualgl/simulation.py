@@ -6,8 +6,8 @@ from collections import deque
 import glfw
 from spatial3d import AABB, Intersection, Ray
 
-from visual.messaging.event import Event
-from visual.messaging.listener import listen, listener
+from visualgl.messaging.event import Event
+from visualgl.messaging.listener import listen, listener
 
 logger = logging.getLogger(__name__)
 

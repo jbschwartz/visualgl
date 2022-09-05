@@ -3,8 +3,8 @@ import struct
 
 from spatial3d import Facet, Mesh, vector3
 
-from visual.exceptions import *
-from visual.timer import Timer
+from visualgl.exceptions import *
+from visualgl.timer import Timer
 
 from .stl_type import STLType
 

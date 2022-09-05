@@ -1,6 +1,6 @@
 import unittest
 
-from visual import FrozenDict
+from visualgl import FrozenDict
 
 
 class TestFrozenDict(unittest.TestCase):
