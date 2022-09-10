@@ -1,9 +1,11 @@
-import sys
+import json
 from typing import Optional
 
 import glfw
 from OpenGL.GL import GL_TRUE
 from spatial3d import Vector3
+
+from visualgl.exceptions import WindowError
 
 from .messaging.emitter import emitter
 from .messaging.event import Event
@@ -21,7 +23,7 @@ class Window:
         self.modifiers = 0
 
         if not glfw.init():
-            sys.exit("GLFW initialization failed")
+            raise WindowError(self._detail_error("GLFW initialization failed"))
 
         self.window_hints()
 
@@ -29,7 +31,7 @@ class Window:
 
         if not self.window:
             glfw.terminate()
-            sys.exit("GLFW create window failed")
+            raise WindowError(self._detail_error("GLFW create window failed"))
 
         self.set_callbacks()
 
@@ -111,3 +113,17 @@ class Window:
 
             glfw.swap_buffers(self.window)
             glfw.poll_events()
+
+    def _detail_error(self, message: str) -> str:
+        """Return a detailed error message if possible. Otherwise return the provided `message`."""
+        code, description = glfw.get_error()
+
+        error_string = message
+
+        if description is not None:
+            error_string += f": {description}"
+
+        if code != 0:
+            error_string += f" (code {code})"
+
+        return error_string
