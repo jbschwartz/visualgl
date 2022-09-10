@@ -285,10 +285,7 @@ class CameraController:
         # Calculate the initial cursor position
         cursor_start_point = cursor - cursor_delta
         # Calculate the radius vector from center screen to initial cursor position
-        r = Vector3(
-            cursor_start_point.x - self.window.width / 2,
-            cursor_start_point.y - self.window.height / 2,
-        )
+        r = cursor_start_point - (self.window.size / 2)
 
         if math.isclose(r.length(), 0):
             return

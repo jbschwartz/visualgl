@@ -53,6 +53,60 @@ class Window:
         # The last recorded cursor position.
         self.last_cursor_position: Optional[Vector3] = None
 
+    @property
+    def cursor_position(self) -> Vector3:
+        """Return a Vector3 containing the current cursor position.
+
+        The third component of the vector is always set to 0.
+        """
+        return Vector3(*glfw.get_cursor_pos(self.window))
+
+    @property
+    def size(self) -> Vector3:
+        """Return a Vector3 containing the current size of the window.
+
+        The third component of the vector is always set to 0.
+        """
+        return Vector3(*glfw.get_window_size(self.window))
+
+    def ndc(self, cursor_position: Vector3) -> Vector3:
+        """Return the normalized device coordinates at the provided cursor position.
+
+        The third component of the vector is always set to 0.
+        """
+        return Vector3(
+            2 * cursor_position.x / self.size.x - 1, 1 - 2 * cursor_position.y / self.size.y
+        )
+
+    def run(self, fps_limit: Optional[int] = None) -> None:
+        """Run the main event loop.
+
+        If `fps_limit` is provided, the loop will execute no faster than the provide value.
+        """
+        # Send a window resize event so observers are provided the initial window size
+        self._window_size(self.window, self.size.x, self.size.y)
+
+        period = (1 / fps_limit) if fps_limit else 0
+
+        update = Timer()
+        frame = Timer(period=period)
+
+        self.emit(Event.START_RENDERER)
+
+        while not glfw.window_should_close(self.window):
+            with update:
+                self.emit(Event.UPDATE, delta=update.time_since_last)
+
+            with frame:
+                if frame.ready:
+                    self.emit(Event.START_FRAME)
+                    self.emit(Event.DRAW)
+
+            glfw.swap_buffers(self.window)
+            glfw.poll_events()
+
+        self._write_window_settings()
+
     @_callback
     def _cursor_pos(self, _window, x_position: int, y_position: int) -> None:
         """Emit the cursor position event or drag event if there are pressed mouse buttons."""
@@ -83,7 +137,7 @@ class Window:
     @_callback
     def _mouse_button(self, _window, button: int, action: int, modifiers: int) -> None:
         """Emit the click event for clicks and releases."""
-        self.emit(Event.CLICK, button, action, self.get_cursor(), modifiers)
+        self.emit(Event.CLICK, button, action, self.cursor_position, modifiers)
 
         # Record which mouse button is being held down. This does not support holding down multiple
         # buttons at once.
@@ -98,41 +152,7 @@ class Window:
     @_callback
     def _window_size(self, _window, width: int, height: int) -> None:
         """Emit the window resize event."""
-        self.width = width
-        self.height = height
         self.emit(Event.WINDOW_RESIZE, width, height)
-
-    # TODO: Remove this function (in favor of a property?). It's probably not necessary since the cursor_pos callback is constantly updating last_cursor_position
-    def get_cursor(self):
-        return Vector3(*glfw.get_cursor_pos(self.window), 0)
-
-    def ndc(self, cursor):
-        return Vector3(2 * cursor.x / self.width - 1, 1 - 2 * cursor.y / self.height)
-
-    def run(self, fps_limit: Optional[int] = None):
-        # Send a window resize event so observers are provided the initial window size
-        self._window_size(self.window, *glfw.get_window_size(self.window))
-
-        period = (1 / fps_limit) if fps_limit else 0
-
-        update = Timer()
-        frame = Timer(period=period)
-
-        self.emit(Event.START_RENDERER)
-
-        while not glfw.window_should_close(self.window):
-            with update:
-                self.emit(Event.UPDATE, delta=update.time_since_last)
-
-            with frame:
-                if frame.ready:
-                    self.emit(Event.START_FRAME)
-                    self.emit(Event.DRAW)
-
-            glfw.swap_buffers(self.window)
-            glfw.poll_events()
-
-        self._write_window_settings()
 
     def _create_window(self, title: str, width: Optional[int] = None, height: Optional[int] = None):
         """Create the window with the provided settings using GLFW."""
@@ -223,14 +243,13 @@ class Window:
         if not (settings_path := self._settings_path()):
             return
 
-        width, height = glfw.get_window_size(self.window)
         x_position, y_position = glfw.get_window_pos(self.window)
         with open(settings_path, "w", encoding="utf-8") as file:
             file.write(
                 json.dumps(
                     {
-                        "width": width,
-                        "height": height,
+                        "width": self.size.x,
+                        "height": self.size.y,
                         "x_position": x_position,
                         "y_position": y_position,
                     }
