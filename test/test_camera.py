@@ -1,61 +1,73 @@
 import math
-import unittest
 
-from spatial3d import Vector3
+import pytest
+from spatial3d import CoordinateAxes, Vector3
+from spatial3d.vector3 import almost_equal
 
 from visualgl import Camera
+from visualgl.camera.projection import PerspectiveProjection
 
 
-class TestCamera(unittest.TestCase):
-    def setUp(self):
-        self.camera = Camera()
+@pytest.fixture
+def camera():
+    return Camera()
 
-    def test_default_camera_is_initialized_correctly(self):
-        self.assertIsNotNone(getattr(self.camera, "position", None))
-        self.assertIsNotNone(getattr(self.camera, "camera_to_world", None))
-        self.assertIsNotNone(getattr(self.camera, "world_to_camera", None))
 
-        self.assertAlmostEqual(self.camera.position, Vector3().Y())
+def test_camera_initializes_with_default_transform(camera):
+    assert getattr(camera, "position", None) is not None
+    assert almost_equal(camera.position, Vector3())
 
-    def test_camera_orbit_does_not_change_distance_to_target(self):
-        target = Vector3(4, 5, 6)
-        initial_position = self.camera.position
+    assert getattr(camera, "camera_to_world", None) is not None
+    assert getattr(camera, "world_to_camera", None) is not None
 
-        initial_distance = (target - initial_position).length()
+    basis = camera.camera_to_world.basis
+    assert almost_equal(basis[CoordinateAxes.X], Vector3.X())
+    assert almost_equal(basis[CoordinateAxes.Y], Vector3.Y())
+    assert almost_equal(basis[CoordinateAxes.Z], Vector3.Z())
 
-        self.camera.orbit(target, 1, 2)
+    assert getattr(camera, "projection", None) is not None
+    assert isinstance(camera.projection, PerspectiveProjection)
 
-        final_position = self.camera.position
-        final_distance = (target - final_position).length()
 
-        self.assertAlmostEqual(initial_distance, final_distance)
+def test_camera_orbit_does_not_change_distance_to_target(camera):
+    target = Vector3(4, 5, 6)
+    initial_position = camera.position
 
-    def test_camera_roll_does_not_change_camera_position(self):
-        initial_position = self.camera.position
-        self.camera.roll(math.radians(10))
-        self.camera.roll(-math.radians(35))
+    initial_distance = (target - initial_position).length()
 
-        self.assertAlmostEqual(initial_position, self.camera.position)
+    camera.orbit(target, 1, 2)
 
-    def test_camera_track_moves_in_camera_space_x_and_y(self):
-        initial_position = self.camera.position
-        initial_z_axis = self.camera.camera_to_world(Vector3.Z(), as_type="vector")
+    final_position = camera.position
+    final_distance = (target - final_position).length()
 
-        track_amount_camera_space = Vector3(10, -10)
-        track_amount_world_space = self.camera.camera_to_world(
-            track_amount_camera_space, as_type="vector"
-        )
+    assert pytest.approx(initial_distance) == final_distance
 
-        self.camera.track(track_amount_camera_space.x, track_amount_camera_space.y)
 
-        final_postion = self.camera.position
-        final_z_axis = self.camera.camera_to_world(Vector3.Z(), as_type="vector")
+def test_camera_roll_does_not_change_camera_position(camera):
+    initial_position = camera.position
+    camera.roll(math.radians(10))
+    camera.roll(-math.radians(35))
 
-        # Check that the motion is orthogonal to the camera's Z axis
-        delta = final_postion - initial_position
-        dot = delta * initial_z_axis
+    assert almost_equal(initial_position, camera.position)
 
-        self.assertAlmostEqual(dot, 0)
 
-        self.assertAlmostEqual(initial_position + track_amount_world_space, self.camera.position)
-        self.assertAlmostEqual(initial_z_axis, final_z_axis)
+def test_camera_track_moves_in_camera_space_x_and_y(camera):
+    initial_position = camera.position
+    initial_z_axis = camera.camera_to_world(Vector3.Z(), as_type="vector")
+
+    track_amount_camera_space = Vector3(10, -10)
+    track_amount_world_space = camera.camera_to_world(track_amount_camera_space, as_type="vector")
+
+    camera.track(track_amount_camera_space.x, track_amount_camera_space.y)
+
+    final_position = camera.position
+    final_z_axis = camera.camera_to_world(Vector3.Z(), as_type="vector")
+
+    # Check that the motion is orthogonal to the camera's Z axis
+    delta = final_position - initial_position
+    dot = delta * initial_z_axis
+
+    assert pytest.approx(dot) == 0
+
+    assert almost_equal(initial_position + track_amount_world_space, camera.position)
+    assert almost_equal(initial_z_axis, final_z_axis)
