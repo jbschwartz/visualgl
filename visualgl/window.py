@@ -1,5 +1,6 @@
 import json
-from typing import Optional
+import os
+from typing import Any, Dict, Optional
 
 import glfw
 from OpenGL.GL import GL_TRUE
@@ -9,16 +10,19 @@ from visualgl.exceptions import WindowError
 
 from .messaging.emitter import emitter
 from .messaging.event import Event
+from .settings import settings
 from .timer import Timer
 from .utils import sign
 
 
 @emitter
 class Window:
-    def __init__(self, width, height, title):
-        self.width = width
-        self.height = height
+    """A GUI window and OpenGL context."""
 
+    # The file name used to store windows settings on disk.
+    SETTINGS_FILE_NAME = "window.json"
+
+    def __init__(self, title: str, **kwargs):
         self.dragging = None
         self.modifiers = 0
 
@@ -27,11 +31,19 @@ class Window:
 
         self.window_hints()
 
+        last = self._load_window_settings()
+
+        width = last.get("width", width)
+        height = last.get("height", height)
+
         self.window = glfw.create_window(self.width, self.height, title, None, None)
 
         if not self.window:
             glfw.terminate()
             raise WindowError(self._detail_error("GLFW create window failed"))
+
+        if "x_position" in last and "y_position" in last:
+            glfw.set_window_pos(self.window, last["x_position"], last["y_position"])
 
         self.set_callbacks()
 
@@ -114,6 +126,8 @@ class Window:
             glfw.swap_buffers(self.window)
             glfw.poll_events()
 
+        self._write_window_settings()
+
     def _detail_error(self, message: str) -> str:
         """Return a detailed error message if possible. Otherwise return the provided `message`."""
         code, description = glfw.get_error()
@@ -127,3 +141,55 @@ class Window:
             error_string += f" (code {code})"
 
         return error_string
+
+    def _load_window_settings(self) -> Dict[str, Any]:
+        """Return a dictionary with the window settings (e.g., size and position) from last session.
+
+        If no settings file exists, return an empty dictionary.
+        """
+
+        # If the user has not provided a settings directory, there is no file to look for.
+        if not (settings_path := self._settings_path()):
+            return {}
+
+        try:
+            with open(settings_path, encoding="utf-8") as file:
+                return json.load(file)
+        except FileNotFoundError:
+            # This might be the first time that the window has been opened. A settings file will
+            # be saved at the end of the session (see `_write_window_settings`).
+            pass
+
+        return {}
+
+    def _settings_path(self) -> Optional[str]:
+        """Return the path to the window settings file.
+
+        If the settings directory is not set, return None.
+        """
+        if not (settings_directory := settings["directory"]):
+            return None
+
+        return os.path.join(settings_directory, Window.SETTINGS_FILE_NAME)
+
+    def _write_window_settings(self) -> None:
+        """Write the current window settings to a file in the settings directory.
+
+        If the settings directory is not set, this function does nothing.
+        """
+        if not (settings_path := self._settings_path()):
+            return
+
+        width, height = glfw.get_window_size(self.window)
+        x_position, y_position = glfw.get_window_pos(self.window)
+        with open(settings_path, "w", encoding="utf-8") as file:
+            file.write(
+                json.dumps(
+                    {
+                        "width": width,
+                        "height": height,
+                        "x_position": x_position,
+                        "y_position": y_position,
+                    }
+                )
+            )
