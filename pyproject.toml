@@ -27,16 +27,17 @@ PyOpenGL = "^3.1.6"
 PyOpenGL-accelerate = {version = "^3.1.6", optional = true}
 spatial3d = "^0.7.0"
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.extras]
+extras = ["PyOpenGL-accelerate"]
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.1.3"
 black = "^22.6.0"
 mypy = "^0.971"
 pydocstyle = "^6.1.1"
 pylint = "^2.14.5"
 coverage = "^6.4.3"
 toml = "^0.10.2"
-
-[tool.poetry.extras]
-extras = ["PyOpenGL-accelerate"]
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
