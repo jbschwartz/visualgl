@@ -23,6 +23,8 @@ def _callback(function):
     return function
 
 
+# Pylint cannot resolve the `emit` method since it is provided by the `emitter` decorator.
+# pylint: disable=no-member
 @emitter
 class Window:
     """A GUI window and OpenGL context."""
@@ -113,7 +115,7 @@ class Window:
         cursor_position = Vector3(x_position, y_position)
 
         if self.last_cursor_position is not None:
-            cursor_delta = self.last_cursor_position - cursor_position
+            cursor_delta = cursor_position - self.last_cursor_position
         else:
             cursor_delta = Vector3()
 

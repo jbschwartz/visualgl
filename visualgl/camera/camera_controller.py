@@ -69,15 +69,17 @@ class CameraController:
     def drag(self, button, cursor, cursor_delta, modifiers):
         command = self.bindings.get_command((modifiers, button))
 
+        # Invert the delta in places so that the position of the scene follows the cursor
+        # as opposed to the position of the camera following the cursor.
         if command == "track":
             self.track_cursor(cursor, cursor_delta)
         elif command == "roll":
-            angle = self.calculate_roll_angle(cursor, cursor_delta)
+            angle = self.calculate_roll_angle(cursor, -cursor_delta)
             self.camera.roll(angle)
         elif command == "scale":
             self.try_scale(self.settings.SCALE_SPEED * cursor_delta.y)
         elif command == "orbit":
-            angle = self.settings.ORBIT_SPEED * cursor_delta
+            angle = self.settings.ORBIT_SPEED * -cursor_delta
             self.camera.orbit(self.target, angle.y, angle.x, self.orbit_type)
 
     @listen(Event.KEY)
@@ -146,7 +148,7 @@ class CameraController:
                 self.target, 0, self.settings.ORBIT_STEP * horizontal, self.orbit_type
             )
         if vertical:
-            self.scale_to_cursor(self.window.get_cursor(), vertical * self.settings.SCALE_IN)
+            self.scale_to_cursor(self.window.cursor_position, vertical * self.settings.SCALE_IN)
 
     @listen(Event.WINDOW_RESIZE)
     def window_resize(self, width, height):
@@ -255,7 +257,7 @@ class CameraController:
 
         That is, calculate the distance in cursor distance in NDC and convert that to camera motion.
         """
-        delta_ndc = self.window.ndc(cursor) - self.window.ndc(cursor + cursor_delta)
+        delta_ndc = self.window.ndc(cursor) - self.window.ndc(cursor - cursor_delta)
 
         delta = self.camera.camera_space(delta_ndc)
 
