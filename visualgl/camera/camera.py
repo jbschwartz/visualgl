@@ -1,10 +1,10 @@
 import enum
-import math
+from typing import Optional
 
-from spatial3d import AABB, CoordinateAxes, Ray, Transform, vector3
+from spatial3d import AABB, CoordinateAxes, Quaternion, Ray, Transform, vector3
 
+from .exceptions import CameraError
 from .projection import OrthoProjection, PerspectiveProjection, Projection
-from ..utils import safe_acos
 
 Vector3 = vector3.Vector3
 
@@ -18,69 +18,45 @@ class Camera:
     """Basic camera model with positioning and manipulation."""
 
     def __init__(
-        self,
-        position: Vector3 = None,
-        target: Vector3 = None,
-        up: Vector3 = None,
-        projection: Projection = None,
+        self, camera_to_world: Optional[Transform] = None, projection: Optional[Projection] = None
     ) -> None:
         self.projection = projection or PerspectiveProjection()
-
-        position = position or Vector3.Y()
-        target = target or Vector3()
-        up = up or Vector3.Z()
-        self.look_at(position, target, up)
-
-    def look_at(self, position: Vector3, target: Vector3, up: Vector3) -> None:
-        """Calculate look-at transformation.
-
-        Uses a geometrically intuitive method with quaternions.
-        (instead of a more efficient computation converting from a matrix directly)
-
-        Steps:
-          1.  Start with the base coordinate frame
-          2.  We calculate our desired z axis (called forward)
-          3.  We calculate the difference between our existing z axis and desired
-          4.  We rotate around our desired x axis (called right)
-              to align our existing z axis with our desired z axis
-          5.  In the process, we move our existing x axis out of alignment with our desired x axis into an intermediate
-          6.  We aim to rotate around our desired z axis (mostly so we don't move our desired z axis)
-              to align our intermediate x axis with the desired x axis
-          7.  We calculate the difference between our intermediate x axis and desired
-          8.  Note, sometimes the intermediate x axis is already positioned correctly. So we just stop there.
-          9.  Otherwise, we need to then calculate which direction to rotate the intermediate x to get to desired.
-          10. Rotate around our desired z axis to complete the transformation
-        """
-
-        forward = (position - target).normalize()  # Step 2
-        angle_z = math.acos(Vector3.Z() * forward)  # Step 3
-
-        right = (up % forward).normalize()
-        align_z = Transform.from_axis_angle_translation(axis=right, angle=angle_z)  # Step 4
-
-        intermediate_x = align_z(Vector3.X(), as_type="vector")  # Step 5
-
-        dot = right * intermediate_x
-
-        angle_x = safe_acos(dot)
-
-        if math.isclose(angle_x, 0):
-            # Our intermediate x axis is already where it should be. We do no further rotation.
-            align_x = Transform.from_axis_angle_translation(translation=position)  # Step 8
-        else:
-            # Check which direction we need to rotate by angle_x (dot product tells us how much, but not which way)
-            # See if the calculated normal vector is parallel or anti-parallel with the z vector
-            calculated_normal = right % intermediate_x
-            rotation_direction = -1 if calculated_normal * forward > 0 else 1
-            align_x = Transform.from_axis_angle_translation(
-                axis=(rotation_direction * forward), angle=angle_x, translation=position
-            )  # Step 9
-
-        self.camera_to_world = align_x * align_z  # Step 10
+        self.camera_to_world = camera_to_world or Transform()
 
     @property
     def position(self) -> Vector3:
+        """Return the current camera position in world space."""
         return self.camera_to_world.translation
+
+    def look_at(
+        self, position: Vector3, target: Vector3, up_direction: Optional[Vector3] = None
+    ) -> None:
+        """Move the camera to look at the provided target from the given position and orientation.
+
+        The provided vectors should be given in world coordinates. If an up direction is not
+        provided, the world's Z-axis is used.
+
+        This function recomputes the camera-to-world transformation by building the quaternion
+        representation of a coordinate frame
+        (3 vectors and a position).
+        """
+        up_direction = up_direction or Vector3.Z()
+
+        # Negated since the camera looks down the negative Z axis.
+        forward = -(target - position).normalize()
+
+        try:
+            right = (up_direction % forward).normalize()
+        except ZeroDivisionError as e:
+            raise CameraError(
+                "Provided up orientation is ambiguous; it is coincident with the camera's direction"
+            ) from e
+
+        upward = (forward % right).normalize()
+
+        self.camera_to_world = Transform.from_orientation_translation(
+            Quaternion.from_basis(right, upward, forward), position
+        )
 
     def orbit(
         self,
