@@ -4,7 +4,7 @@ import math
 from spatial3d import AABB, Ray, Transform, vector3
 
 from .projection import OrthoProjection, PerspectiveProjection, Projection
-from .utils import safe_acos
+from ..utils import safe_acos
 
 Vector3 = vector3.Vector3
 
