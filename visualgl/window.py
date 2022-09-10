@@ -15,6 +15,14 @@ from .timer import Timer
 from .utils import sign
 
 
+def _callback(function):
+    """Decorator to indicate that the method is a GLFW callback function."""
+    # pylint: disable=protected-access
+    # Use a protected attribute so as not to disturb any aspects of the function.
+    function._callback = getattr(glfw, f"set_{function.__name__.lstrip('_')}_callback")
+    return function
+
+
 @emitter
 class Window:
     """A GUI window and OpenGL context."""
@@ -26,53 +34,70 @@ class Window:
     SETTINGS_FILE_NAME = "window.json"
 
     def __init__(self, title: str, **kwargs):
-        self.dragging = None
-        self.modifiers = 0
-
         if not glfw.init():
             raise WindowError(self._detail_error("GLFW initialization failed"))
 
         self._window_hints()
         self.window = self._create_window(title, kwargs.get("width"), kwargs.get("height"))
 
-        self.set_callbacks()
+        self._set_callbacks()
 
-        self.last_cursor_position = self.get_cursor()
+        # The current mouse button being held down in the window. Use None if no button is pressed.
+        # Note: GLFW uses 0 to represent the left mouse button so do not attempt to clear this
+        # value by setting to 0. Modifiers do not suffer from this problem.
+        self.current_button_down: Optional[int] = None
+        # Store the currently held down or released modifiers (e.g., shift). This attribute
+        # functions like a bit field with each bit representing a different key.
+        self.current_key_modifiers: int = 0
 
-    def set_callbacks(self):
-        glfw.set_window_size_callback(self.window, self.window_callback)
-        glfw.set_key_callback(self.window, self.key_callback)
-        glfw.set_scroll_callback(self.window, self.scroll_callback)
-        glfw.set_mouse_button_callback(self.window, self.mouse_button_callback)
-        glfw.set_cursor_pos_callback(self.window, self.cursor_pos_callback)
+        # The last recorded cursor position.
+        self.last_cursor_position: Optional[Vector3] = None
 
-    def key_callback(self, window, key, scancode, action, mods):
-        self.modifiers = mods
+    @_callback
+    def _cursor_pos(self, _window, x_position: int, y_position: int) -> None:
+        """Emit the cursor position event or drag event if there are pressed mouse buttons."""
+        cursor_position = Vector3(x_position, y_position)
 
-        self.emit(Event.KEY, key, action, self.modifiers)
+        if self.last_cursor_position is not None:
+            cursor_delta = self.last_cursor_position - cursor_position
+        else:
+            cursor_delta = Vector3()
 
-    def scroll_callback(self, window, x_direction, y_direction):
+        self.last_cursor_position = cursor_position
+
+        self.emit(
+            Event.DRAG if self.current_button_down is not None else Event.CURSOR,
+            self.current_button_down,
+            cursor_position,
+            cursor_delta,
+            self.current_key_modifiers,
+        )
+
+    @_callback
+    def _key(self, _window, key: int, _scancode, action: int, modifiers: int) -> None:
+        """Emit the key event for key presses, releases, and repeats."""
+        self.current_key_modifiers = modifiers
+
+        self.emit(Event.KEY, key, action, self.current_key_modifiers)
+
+    @_callback
+    def _mouse_button(self, _window, button: int, action: int, modifiers: int) -> None:
+        """Emit the click event for clicks and releases."""
+        self.emit(Event.CLICK, button, action, self.get_cursor(), modifiers)
+
+        # Record which mouse button is being held down. This does not support holding down multiple
+        # buttons at once.
+        self.current_button_down = button if action == glfw.PRESS else None
+
+    @_callback
+    def _scroll(self, _window, x_direction: float, y_direction: float) -> None:
+        """Emit the scroll event for both scroll directions."""
+        # The scroll amounts are normalized by only passing on their direction.
         self.emit(Event.SCROLL, sign(x_direction), sign(y_direction))
 
-    def mouse_button_callback(self, window, button, action, mods):
-        self.emit(Event.CLICK, button, action, self.get_cursor(), mods)
-
-        # Record which mouse button is being dragged
-        self.dragging = button if action == glfw.PRESS else None
-
-    def cursor_pos_callback(self, window, x, y):
-        cursor = Vector3(x, y)
-
-        if self.last_cursor_position:
-            # TODO: This is backwards. Needs to be current - previous.
-            cursor_delta = self.last_cursor_position - cursor
-
-        self.last_cursor_position = cursor
-
-        event = Event.DRAG if self.dragging is not None else Event.CURSOR
-        self.emit(event, self.dragging, cursor, cursor_delta, self.modifiers)
-
-    def window_callback(self, window, width, height):
+    @_callback
+    def _window_size(self, _window, width: int, height: int) -> None:
+        """Emit the window resize event."""
         self.width = width
         self.height = height
         self.emit(Event.WINDOW_RESIZE, width, height)
@@ -86,7 +111,7 @@ class Window:
 
     def run(self, fps_limit: Optional[int] = None):
         # Send a window resize event so observers are provided the initial window size
-        self.window_callback(self.window, *glfw.get_window_size(self.window))
+        self._window_size(self.window, *glfw.get_window_size(self.window))
 
         period = (1 / fps_limit) if fps_limit else 0
 
@@ -165,6 +190,13 @@ class Window:
             pass
 
         return {}
+
+    def _set_callbacks(self):
+        """Look for all decorated methods on Window and set them as GLFW callbacks."""
+        for name in dir(self):
+            method = getattr(self, name)
+            if setter := getattr(method, "_callback", None):
+                setter(self.window, method)
 
     def _settings_path(self) -> Optional[str]:
         """Return the path to the window settings file.
