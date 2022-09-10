@@ -1,6 +1,4 @@
-import json
-import os
-from typing import Any, Dict, Optional
+from typing import Optional
 
 import glfw
 from OpenGL.GL import GL_TRUE
@@ -28,12 +26,6 @@ def _callback(function):
 @emitter
 class Window:
     """A GUI window and OpenGL context."""
-
-    # The default window size used.
-    DEFAULT_WINDOW_SIZE = Vector3(1000, 1000)
-
-    # The file name used to store windows settings on disk.
-    SETTINGS_FILE_NAME = "window.json"
 
     def __init__(self, title: str, **kwargs):
         if not glfw.init():
@@ -107,7 +99,16 @@ class Window:
             glfw.swap_buffers(self.window)
             glfw.poll_events()
 
-        self._write_window_settings()
+        # Update and write the window settings. This will be used by the next session.
+        settings.window.update(
+            {
+                "width": self.size.x,
+                "height": self.size.y,
+                "position": glfw.get_window_pos(self.window),
+            }
+        )
+
+        settings.write()
 
     @_callback
     def _cursor_pos(self, _window, x_position: int, y_position: int) -> None:
@@ -158,11 +159,9 @@ class Window:
 
     def _create_window(self, title: str, width: Optional[int] = None, height: Optional[int] = None):
         """Create the window with the provided settings using GLFW."""
-        last = self._load_window_settings()
-
-        # Try to use the last values if they exist. Otherwise rely on defaults.
-        width = width if width else last.get("width", Window.DEFAULT_WINDOW_SIZE.x)
-        height = height if height else last.get("height", Window.DEFAULT_WINDOW_SIZE.y)
+        # Try to use the _settings values if they exist. Otherwise rely on defaults.
+        width = width if width else settings.window.width
+        height = height if height else settings.window.height
 
         window = glfw.create_window(width, height, title, None, None)
 
@@ -170,9 +169,9 @@ class Window:
             glfw.terminate()
             raise WindowError(self._detail_error("GLFW create window failed"))
 
-        # Set the position of the window from the last session.
-        if "x_position" in last and "y_position" in last:
-            glfw.set_window_pos(window, last["x_position"], last["y_position"])
+        # Set the position of the window from the _settings session.
+        if "position" in settings.window:
+            glfw.set_window_pos(window, *settings.window.position)
 
         glfw.make_context_current(window)
         glfw.swap_interval(0)
@@ -193,26 +192,6 @@ class Window:
 
         return error_string
 
-    def _load_window_settings(self) -> Dict[str, Any]:
-        """Return a dictionary with the window settings (e.g., size and position) from last session.
-
-        If no settings file exists, return an empty dictionary.
-        """
-
-        # If the user has not provided a settings directory, there is no file to look for.
-        if not (settings_path := self._settings_path()):
-            return {}
-
-        try:
-            with open(settings_path, encoding="utf-8") as file:
-                return json.load(file)
-        except FileNotFoundError:
-            # This might be the first time that the window has been opened. A settings file will
-            # be saved at the end of the session (see `_write_window_settings`).
-            pass
-
-        return {}
-
     def _set_callbacks(self):
         """Look for all decorated methods on Window and set them as GLFW callbacks."""
         for name in dir(self):
@@ -220,40 +199,9 @@ class Window:
             if setter := getattr(method, "_callback", None):
                 setter(self.window, method)
 
-    def _settings_path(self) -> Optional[str]:
-        """Return the path to the window settings file.
-
-        If the settings directory is not set, return None.
-        """
-        if not (settings_directory := settings["directory"]):
-            return None
-
-        return os.path.join(settings_directory, Window.SETTINGS_FILE_NAME)
-
     def _window_hints(self) -> None:
         """Set window hints."""
         glfw.window_hint(glfw.CONTEXT_VERSION_MAJOR, 4)
         glfw.window_hint(glfw.CONTEXT_VERSION_MINOR, 6)
         glfw.window_hint(glfw.RESIZABLE, GL_TRUE)
         glfw.window_hint(glfw.SAMPLES, 4)
-
-    def _write_window_settings(self) -> None:
-        """Write the current window settings to a file in the settings directory.
-
-        If the settings directory is not set, this function does nothing.
-        """
-        if not (settings_path := self._settings_path()):
-            return
-
-        x_position, y_position = glfw.get_window_pos(self.window)
-        with open(settings_path, "w", encoding="utf-8") as file:
-            file.write(
-                json.dumps(
-                    {
-                        "width": self.size.x,
-                        "height": self.size.y,
-                        "x_position": x_position,
-                        "y_position": y_position,
-                    }
-                )
-            )

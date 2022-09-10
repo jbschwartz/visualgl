@@ -5,6 +5,7 @@ from spatial3d import Transform, vector3
 
 from ..messaging.event import Event
 from ..messaging.listener import listen, listener
+from ..settings import settings
 from ..window import Window
 from .camera import Camera, OrbitType
 from .projection import OrthoProjection, PerspectiveProjection
@@ -24,9 +25,8 @@ class CameraController:
         "view_iso": {"position": Vector3(750, -750, 1250)},
     }
 
-    def __init__(self, camera: Camera, settings, bindings, scene, window: Window):
+    def __init__(self, camera: Camera, bindings, scene, window: Window):
         self.camera = camera
-        self.settings = settings
         self.bindings = bindings
         self.scene = scene
         self.window = window
@@ -78,9 +78,9 @@ class CameraController:
             angle = self.calculate_roll_angle(cursor, -cursor_delta)
             self.camera.roll(angle)
         elif command == "scale":
-            self.try_scale(self.settings.SCALE_SPEED * cursor_delta.y)
+            self.try_scale(settings.camera.scale_speed * cursor_delta.y)
         elif command == "orbit":
-            angle = self.settings.ORBIT_SPEED * -cursor_delta
+            angle = settings.camera.orbit_speed * -cursor_delta
             self.camera.orbit(self.target, angle.y, angle.x, self.orbit_type)
 
     @listen(Event.KEY)
@@ -91,7 +91,7 @@ class CameraController:
         command = self.bindings.get_command((modifiers, key))
 
         if command == "fit":
-            self.camera.fit(self.scene.aabb, self.settings.FIT_SCALE)
+            self.camera.fit(self.scene.aabb, settings.camera.fit_scale)
         elif command == "orbit_toggle":
             self.orbit_type = (
                 OrbitType.FREE
@@ -104,32 +104,32 @@ class CameraController:
             self.normal_to()
 
         elif command == "track_left":
-            self.camera.track(-self.settings.TRACK_STEP, 0)
+            self.camera.track(-settings.camera.track_step, 0)
         elif command == "track_right":
-            self.camera.track(self.settings.TRACK_STEP, 0)
+            self.camera.track(settings.camera.track_step, 0)
         elif command == "track_up":
-            self.camera.track(0, self.settings.TRACK_STEP)
+            self.camera.track(0, settings.camera.track_step)
         elif command == "track_down":
-            self.camera.track(0, -self.settings.TRACK_STEP)
+            self.camera.track(0, -settings.camera.track_step)
 
         elif command == "orbit_left":
-            self.camera.orbit(self.target, 0, -self.settings.ORBIT_STEP, self.orbit_type)
+            self.camera.orbit(self.target, 0, -settings.camera.orbit_step, self.orbit_type)
         elif command == "orbit_right":
-            self.camera.orbit(self.target, 0, self.settings.ORBIT_STEP, self.orbit_type)
+            self.camera.orbit(self.target, 0, settings.camera.orbit_step, self.orbit_type)
         elif command == "orbit_up":
-            self.camera.orbit(self.target, -self.settings.ORBIT_STEP, 0, self.orbit_type)
+            self.camera.orbit(self.target, -settings.camera.orbit_step, 0, self.orbit_type)
         elif command == "orbit_down":
-            self.camera.orbit(self.target, self.settings.ORBIT_STEP, 0, self.orbit_type)
+            self.camera.orbit(self.target, settings.camera.orbit_step, 0, self.orbit_type)
 
         elif command == "roll_cw":
-            self.camera.roll(-self.settings.ROLL_STEP)
+            self.camera.roll(-settings.camera.roll_step)
         elif command == "roll_ccw":
-            self.camera.roll(self.settings.ROLL_STEP)
+            self.camera.roll(settings.camera.roll_step)
 
         elif command == "zoom_in":
-            self.try_scale(-self.settings.SCALE_STEP)
+            self.try_scale(-settings.camera.scale_step)
         elif command == "zoom_out":
-            self.try_scale(self.settings.SCALE_STEP)
+            self.try_scale(settings.camera.scale_step)
 
         elif command in [
             "view_front",
@@ -146,10 +146,10 @@ class CameraController:
     def scroll(self, horizontal: int, vertical: int) -> None:
         if horizontal:
             self.camera.orbit(
-                self.target, 0, self.settings.ORBIT_STEP * horizontal, self.orbit_type
+                self.target, 0, settings.camera.orbit_step * horizontal, self.orbit_type
             )
         if vertical:
-            self.scale_to_cursor(self.window.cursor_position, vertical * self.settings.SCALE_IN)
+            self.scale_to_cursor(self.window.cursor_position, vertical * settings.camera.scale_in)
 
     @listen(Event.WINDOW_RESIZE)
     def window_resize(self, width: int, height: int) -> None:
@@ -273,7 +273,7 @@ class CameraController:
         cursor_camera_point = self.camera.camera_space(ndc)
 
         # This is delta z for perspective and delta width for orthographic
-        delta_scale = direction * self.settings.SCALE_STEP
+        delta_scale = direction * settings.camera.scale_step
         delta_camera = -cursor_camera_point * delta_scale
 
         if isinstance(self.camera.projection, OrthoProjection):
@@ -297,7 +297,7 @@ class CameraController:
         tangent = Vector3(radius.y, -radius.x).normalize()
         # The contribution to the roll is the projection of the cursor_delta vector onto the tangent
         # vector.
-        return self.settings.ROLL_SPEED * cursor_delta * tangent
+        return settings.camera.roll_speed * cursor_delta * tangent
 
     def try_scale(self, amount: float) -> bool:
         """Attempt to scale the scene by the given amount. Return True if the scale is successful.
@@ -326,4 +326,4 @@ class CameraController:
         self.camera.look_at(
             view["position"], view.get("target", Vector3(0, 0, 500)), view.get("up", Vector3.Z())
         )
-        self.camera.fit(self.scene.aabb, self.settings.FIT_SCALE)
+        self.camera.fit(self.scene.aabb, settings.camera.fit_scale)
