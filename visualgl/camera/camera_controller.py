@@ -5,6 +5,7 @@ from spatial3d import Transform, vector3
 
 from ..messaging.event import Event
 from ..messaging.listener import listen, listener
+from ..window import Window
 from .camera import Camera, OrbitType
 from .projection import OrthoProjection, PerspectiveProjection
 
@@ -23,7 +24,7 @@ class CameraController:
         "view_iso": {"position": Vector3(750, -750, 1250)},
     }
 
-    def __init__(self, camera: Camera, settings, bindings, scene, window):
+    def __init__(self, camera: Camera, settings, bindings, scene, window: Window):
         self.camera = camera
         self.settings = settings
         self.bindings = bindings
@@ -48,12 +49,12 @@ class CameraController:
                 self.is_selecting = None
 
         if button == glfw.MOUSE_BUTTON_MIDDLE and action == glfw.PRESS:
-            r = self.camera.cast_ray(self.window.ndc(cursor))
+            ray = self.camera.cast_ray(self.window.ndc(cursor))
             #   with Timer('Ray Intersection'):
-            x = self.scene.intersect(r)
+            x = self.scene.intersect(ray)
 
             if x.hit:
-                self.target = r.evaluate(x.t)
+                self.target = ray.evaluate(x.t)
             else:
                 if len(self.scene.entities) > 0:
                     self.target = self.scene.aabb.center
@@ -142,7 +143,7 @@ class CameraController:
             self.view(command)
 
     @listen(Event.SCROLL)
-    def scroll(self, horizontal, vertical):
+    def scroll(self, horizontal: int, vertical: int) -> None:
         if horizontal:
             self.camera.orbit(
                 self.target, 0, self.settings.ORBIT_STEP * horizontal, self.orbit_type
@@ -151,11 +152,11 @@ class CameraController:
             self.scale_to_cursor(self.window.cursor_position, vertical * self.settings.SCALE_IN)
 
     @listen(Event.WINDOW_RESIZE)
-    def window_resize(self, width, height):
+    def window_resize(self, width: int, height: int) -> None:
         if not math.isclose(height, 0):
             self.camera.projection.aspect = width / height
 
-    def normal_to(self):
+    def normal_to(self) -> None:
         minimum = math.radians(180)
         direction = Vector3()
         forward = self.camera.camera_to_world(Vector3.Z(), as_type="vector")
@@ -218,11 +219,14 @@ class CameraController:
 
             self.camera.projection = OrthoProjection(**params)
 
-            # If the camera is inside the scene, conservatively move it outside (as otherwise there is no way to as an orthogonal camera)
-            # This can happen if the user brings the perspective camera inside the scene and then switches to orthogonal
+            # If the camera is inside the scene, conservatively move it outside (as otherwise there
+            # is no way to as an orthogonal camera).
+            # This can happen if the user brings the perspective camera inside the scene and then
+            # switches to orthogonal.
             if self.scene.aabb.contains(self.camera.position):
                 # This could cause clipping issues if the size of the scene is large
-                # This could be circumvented by a more precise calculation of the distance to the edge of the scene
+                # This could be circumvented by a more precise calculation of the distance to the
+                # edge of the scene.
                 self.camera.dolly(2 * self.scene.aabb.sphere_radius())
         else:
             width = self.camera.projection.width
@@ -237,10 +241,8 @@ class CameraController:
             if not self.dolly_will_clip(delta):
                 self.camera.dolly(delta)
 
-    def dolly_will_clip(self, displacement):
-        """
-        Check to see if dollying will begin clipping the scene.
-        """
+    def dolly_will_clip(self, displacement: float) -> bool:
+        """Return True if dollying the provided amount will clip the scene."""
         # Get the z value of the back of the scene in camera coordinates
         camera_box_points = self.camera.world_to_camera(self.scene.aabb.corners)
         back_of_scene = min(camera_box_points, key=lambda point: point.z)
@@ -251,9 +253,8 @@ class CameraController:
 
         return False
 
-    def track_cursor(self, cursor, cursor_delta):
-        """
-        Move the camera with the cursor.
+    def track_cursor(self, cursor: Vector3, cursor_delta: Vector3) -> None:
+        """Move the camera the same amount that the cursor moved.
 
         That is, calculate the distance in cursor distance in NDC and convert that to camera motion.
         """
@@ -264,9 +265,9 @@ class CameraController:
         if isinstance(self.camera.projection, PerspectiveProjection):
             delta *= -self.camera.world_to_camera(self.camera.target).z
 
-        self.camera.track(v=-delta)
+        self.camera.track(vector=-delta)
 
-    def scale_to_cursor(self, cursor, direction):
+    def scale_to_cursor(self, cursor: Vector3, direction: int) -> None:
         ndc = self.window.ndc(cursor)
 
         cursor_camera_point = self.camera.camera_space(ndc)
@@ -283,25 +284,25 @@ class CameraController:
         if was_scaled:
             self.camera.track(delta_camera.x, delta_camera.y)
 
-    def calculate_roll_angle(self, cursor, cursor_delta):
-        # Calculate the initial cursor position
+    def calculate_roll_angle(self, cursor: Vector3, cursor_delta: Vector3) -> float:
+        # Calculate the initial cursor position.
         cursor_start_point = cursor - cursor_delta
-        # Calculate the radius vector from center screen to initial cursor position
-        r = cursor_start_point - (self.window.size / 2)
+        # Calculate the radius vector from center screen to initial cursor position.
+        radius = cursor_start_point - (self.window.size / 2)
 
-        if math.isclose(r.length(), 0):
-            return
+        if math.isclose(radius.length(), 0):
+            return 0
 
-        # Calculate the unit tangent vector to the circle at cursor_start_point
-        t = Vector3(r.y, -r.x).normalize()
-        # The contribution to the roll is the projection of the cursor_delta vector onto the tangent vector
-        return self.settings.ROLL_SPEED * cursor_delta * t
+        # Calculate the unit tangent vector to the circle at cursor_start_point.
+        tangent = Vector3(radius.y, -radius.x).normalize()
+        # The contribution to the roll is the projection of the cursor_delta vector onto the tangent
+        # vector.
+        return self.settings.ROLL_SPEED * cursor_delta * tangent
 
-    def try_scale(self, amount):
-        """
-        Attempt to scale the scene.
+    def try_scale(self, amount: float) -> bool:
+        """Attempt to scale the scene by the given amount. Return True if the scale is successful.
 
-        Scaling is prevented if it causes clipping in the scene. Return True for successful scaling. Return False if no scaling occurs.
+        Scaling is successful if it does not cause clipping in the scene.
         """
         if isinstance(self.camera.projection, PerspectiveProjection):
             if self.dolly_will_clip(amount):
@@ -319,7 +320,7 @@ class CameraController:
 
         return True
 
-    def view(self, view_name):
+    def view(self, view_name: str) -> None:
         view = self.VIEWS[view_name]
 
         self.camera.look_at(

@@ -1,15 +1,15 @@
 import enum
 from typing import Optional
 
-from spatial3d import AABB, CoordinateAxes, Quaternion, Ray, Transform, vector3
+from spatial3d import AABB, CoordinateAxes, Quaternion, Ray, Transform, Vector3
 
 from .exceptions import CameraError
 from .projection import OrthoProjection, PerspectiveProjection, Projection
 
-Vector3 = vector3.Vector3
-
 
 class OrbitType(enum.Enum):
+    """Camera orbit type."""
+
     FREE = enum.auto()
     CONSTRAINED = enum.auto()
 
@@ -100,23 +100,28 @@ class Camera:
         """Move the camera along its line of sight (z axis)."""
         self.camera_to_world *= Transform.from_axis_angle_translation(translation=Vector3(0, 0, z))
 
-    def track(self, x: float = 0, y: float = 0, v: Vector3 = None) -> None:
+    def track(self, x: float = 0, y: float = 0, vector: Vector3 = None) -> None:
         """Move the camera vertically and horizontally in camera space."""
-        # Accept vector input if it is provided. Makes calls a bit cleaner if the caller is using a vector already.
-        v = Vector3(*v.xy) if v else Vector3(x, y)
+        # Accept vector input if it is provided. Makes calls a bit cleaner if the caller is using a
+        # vector already.
+        vector = Vector3(*vector.xy) if vector else Vector3(x, y)
 
-        self.camera_to_world *= Transform.from_axis_angle_translation(translation=v)
+        self.camera_to_world *= Transform.from_axis_angle_translation(translation=vector)
 
     def roll(self, angle: float) -> None:
+        """Roll the camera around it's optical axis by the provided angle.
+
+        Positive angles roll the camera in a counter-clockwise direction.
+        """
         self.camera_to_world *= Transform.from_axis_angle_translation(axis=Vector3.Z(), angle=angle)
 
     def fit(self, world_aabb: AABB, scale: float = 1) -> None:
-        """
-        Dolly and track the camera to fit the provided bounding box in world space.
+        """Dolly and track the camera to fit the provided bounding box in world space.
 
         Scale [0, 1] represents the percentage of the frame used (with 1 being full frame).
 
-        This function is not perfect but performs well overall. There may be some edge cases out there lurking.
+        This function is not perfect but performs well overall. There may be some edge cases out
+        there lurking.
         """
 
         # Check to see if the camera is in the scene bounding box
@@ -130,7 +135,7 @@ class Camera:
 
         # Centering the camera on the world bounding box first helps removes issues caused by
         # a major point skipping to a different corner as a result of the camera's zoom in movement.
-        self.track(v=self.world_to_camera(world_aabb.center))
+        self.track(vector=self.world_to_camera(world_aabb.center))
 
         # Convert world bounding box corners to camera space
         camera_box_points = self.world_to_camera(world_aabb.corners)
@@ -152,14 +157,16 @@ class Camera:
                 sorted_points[coord][-1], coord
             )
 
-        # We now want to make the NDC coordinates of the two extreme point (in x or y) equal to 1 and -1
-        # This will mean the bounding box is as big as we can make it on screen without clipping it
+        # We now want to make the NDC coordinates of the two extreme point (in x or y) equal to
+        # 1 and -1.
+        # This will mean the bounding box is as big as we can make it on screen without clipping it.
         #
-        # To do this, both points are shifted equally to center them on the screen. Then both points are made to 1 and -1 by adjusting z
-        # (since NDC.x = x / z and NDC.y = y / z).
+        # To do this, both points are shifted equally to center them on the screen. Then both points
+        # are made to 1 and -1 by adjusting z (since NDC.x = x / z and NDC.y = y / z).
         #
-        # For the case of y being the limiting direction (but it is analogous for x) we use a system of equations:
-        # Two equations and two unknowns (delta_y, delta_z), taken from the projection matrix:
+        # For the case of y being the limiting direction (but it is analogous for x) we use a system
+        # of equations. Two equations and two unknowns (delta_y, delta_z), taken from the
+        # projection matrix:
         #   aspect * (y_1 + delta_y) / (z_1 + delta_z) = -1
         #   aspect * (y_2 + delta_y) / (z_2 + delta_z) =  1
         #
@@ -233,6 +240,11 @@ class Camera:
         return Vector3(m11 * ndc.x, m22 * ndc.y, -self.projection.near_clip)
 
     def cast_ray(self, ndc: Vector3) -> Ray:
+        """Cast a ray from the camera's position into world space through the provided NDC
+        coordinates.
+
+        The ray's origin and direction are given in world coordinates.
+        """
         point_camera_space = self.camera_space(ndc)
 
         if isinstance(self.projection, PerspectiveProjection):
@@ -250,4 +262,5 @@ class Camera:
 
     @property
     def world_to_camera(self) -> Transform:
+        """Return the world-to-camera transformation."""
         return self.camera_to_world.inverse()
