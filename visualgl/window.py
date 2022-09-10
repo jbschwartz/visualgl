@@ -19,6 +19,9 @@ from .utils import sign
 class Window:
     """A GUI window and OpenGL context."""
 
+    # The default window size used.
+    DEFAULT_WINDOW_SIZE = Vector3(1000, 1000)
+
     # The file name used to store windows settings on disk.
     SETTINGS_FILE_NAME = "window.json"
 
@@ -29,34 +32,12 @@ class Window:
         if not glfw.init():
             raise WindowError(self._detail_error("GLFW initialization failed"))
 
-        self.window_hints()
-
-        last = self._load_window_settings()
-
-        width = last.get("width", width)
-        height = last.get("height", height)
-
-        self.window = glfw.create_window(self.width, self.height, title, None, None)
-
-        if not self.window:
-            glfw.terminate()
-            raise WindowError(self._detail_error("GLFW create window failed"))
-
-        if "x_position" in last and "y_position" in last:
-            glfw.set_window_pos(self.window, last["x_position"], last["y_position"])
+        self._window_hints()
+        self.window = self._create_window(title, kwargs.get("width"), kwargs.get("height"))
 
         self.set_callbacks()
 
-        glfw.make_context_current(self.window)
-        glfw.swap_interval(0)
-
         self.last_cursor_position = self.get_cursor()
-
-    def window_hints(self):
-        glfw.window_hint(glfw.CONTEXT_VERSION_MAJOR, 4)
-        glfw.window_hint(glfw.CONTEXT_VERSION_MINOR, 6)
-        glfw.window_hint(glfw.RESIZABLE, GL_TRUE)
-        glfw.window_hint(glfw.SAMPLES, 4)
 
     def set_callbacks(self):
         glfw.set_window_size_callback(self.window, self.window_callback)
@@ -128,6 +109,29 @@ class Window:
 
         self._write_window_settings()
 
+    def _create_window(self, title: str, width: Optional[int] = None, height: Optional[int] = None):
+        """Create the window with the provided settings using GLFW."""
+        last = self._load_window_settings()
+
+        # Try to use the last values if they exist. Otherwise rely on defaults.
+        width = width if width else last.get("width", Window.DEFAULT_WINDOW_SIZE.x)
+        height = height if height else last.get("height", Window.DEFAULT_WINDOW_SIZE.y)
+
+        window = glfw.create_window(width, height, title, None, None)
+
+        if not window:
+            glfw.terminate()
+            raise WindowError(self._detail_error("GLFW create window failed"))
+
+        # Set the position of the window from the last session.
+        if "x_position" in last and "y_position" in last:
+            glfw.set_window_pos(window, last["x_position"], last["y_position"])
+
+        glfw.make_context_current(window)
+        glfw.swap_interval(0)
+
+        return window
+
     def _detail_error(self, message: str) -> str:
         """Return a detailed error message if possible. Otherwise return the provided `message`."""
         code, description = glfw.get_error()
@@ -171,6 +175,13 @@ class Window:
             return None
 
         return os.path.join(settings_directory, Window.SETTINGS_FILE_NAME)
+
+    def _window_hints(self) -> None:
+        """Set window hints."""
+        glfw.window_hint(glfw.CONTEXT_VERSION_MAJOR, 4)
+        glfw.window_hint(glfw.CONTEXT_VERSION_MINOR, 6)
+        glfw.window_hint(glfw.RESIZABLE, GL_TRUE)
+        glfw.window_hint(glfw.SAMPLES, 4)
 
     def _write_window_settings(self) -> None:
         """Write the current window settings to a file in the settings directory.
