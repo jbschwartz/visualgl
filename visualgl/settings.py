@@ -142,7 +142,6 @@ settings = Settings(
         _SettingsNamespace(
             "camera",
             **{
-                "fit_scale": 0.95,
                 "orbit_speed": 0.005,
                 "orbit_step": math.radians(5),
                 "roll_speed": 0.005,

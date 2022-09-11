@@ -91,7 +91,7 @@ class CameraController:
         command = self.bindings.get_command((modifiers, key))
 
         if command == "fit":
-            self.camera.fit(self.scene.aabb, settings.camera.fit_scale)
+            self.camera.fit(self.scene.aabb)
         elif command == "orbit_toggle":
             self.orbit_type = (
                 OrbitType.FREE
@@ -321,4 +321,4 @@ class CameraController:
         self.camera.look_at(
             view["position"], view.get("target", Vector3(0, 0, 500)), view.get("up", Vector3.Z())
         )
-        self.camera.fit(self.scene.aabb, settings.camera.fit_scale)
+        self.camera.fit(self.scene.aabb)
