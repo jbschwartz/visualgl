@@ -151,6 +151,7 @@ settings = Settings(
                 "scale_speed": 0.5,
                 "scale_step": 15,
                 "track_step": 20,
+                "vertical_fov": math.radians(60),
             },
         ),
     ]

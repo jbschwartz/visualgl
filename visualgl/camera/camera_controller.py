@@ -154,7 +154,7 @@ class CameraController:
     @listen(Event.WINDOW_RESIZE)
     def window_resize(self, width: int, height: int) -> None:
         if not math.isclose(height, 0):
-            self.camera.projection.aspect = width / height
+            self.camera.projection.resize(width, height)
 
     def normal_to(self) -> None:
         minimum = math.radians(180)
@@ -210,6 +210,7 @@ class CameraController:
             "aspect": self.camera.projection.aspect,
             "near_clip": self.camera.projection.near_clip,
             "far_clip": self.camera.projection.far_clip,
+            "vertical_fov": settings.camera.vertical_fov,
         }
 
         if isinstance(self.camera.projection, PerspectiveProjection):
@@ -310,12 +311,6 @@ class CameraController:
 
             self.camera.dolly(amount)
         else:
-            at_minimum = self.camera.projection.width <= self.camera.projection.WIDTH_MIN
-            at_maximum = self.camera.projection.width >= self.camera.projection.WIDTH_MAX
-
-            if (at_minimum and amount < 0) or (at_maximum and amount > 0):
-                return False
-
             self.camera.projection.zoom(amount)
 
         return True
