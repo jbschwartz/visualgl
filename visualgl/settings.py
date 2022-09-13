@@ -142,12 +142,12 @@ settings = Settings(
         _SettingsNamespace(
             "camera",
             **{
-                "orbit_speed": 0.005,
+                "orbit_speed": 2.0,
                 "orbit_step": math.radians(5),
-                "roll_speed": 0.005,
+                "roll_speed": 2.0,
                 "roll_step": math.radians(5),
                 "scale_in": 1,
-                "scale_speed": 0.5,
+                "scale_speed": 75,
                 "scale_step": 15,
                 "track_step": 20,
                 "vertical_fov": math.radians(60),

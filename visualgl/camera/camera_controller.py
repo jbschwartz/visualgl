@@ -6,7 +6,6 @@ from spatial3d import Transform, vector3
 from ..messaging.event import Event
 from ..messaging.listener import listen, listener
 from ..settings import settings
-from ..window import Window
 from .camera import Camera, OrbitType
 from .projection import OrthoProjection, PerspectiveProjection
 
@@ -25,32 +24,22 @@ class CameraController:
         "view_iso": {"position": Vector3(750, -750, 1250)},
     }
 
-    def __init__(self, camera: Camera, bindings, scene, window: Window):
+    def __init__(self, camera: Camera, bindings, scene):
         self.camera = camera
         self.bindings = bindings
         self.scene = scene
-        self.window = window
 
         if len(self.scene.entities) > 0:
             self.target = self.scene.aabb.center
         else:
             self.target = Vector3()
 
-        self.is_selecting = None
         self.orbit_type = OrbitType.CONSTRAINED
 
     @listen(Event.CLICK)
     def click(self, button, action, cursor, mods):
-        if button == glfw.MOUSE_BUTTON_LEFT:
-            if action == glfw.PRESS:
-                self.is_selecting = self.window.ndc(cursor)
-            else:
-                end = self.window.ndc(cursor)
-                self.is_selecting = None
-
         if button == glfw.MOUSE_BUTTON_MIDDLE and action == glfw.PRESS:
-            ray = self.camera.cast_ray(self.window.ndc(cursor))
-            #   with Timer('Ray Intersection'):
+            ray = self.camera.cast_ray(cursor)
             x = self.scene.intersect(ray)
 
             if x.hit:
@@ -73,14 +62,15 @@ class CameraController:
         # Invert the delta in places so that the position of the scene follows the cursor
         # as opposed to the position of the camera following the cursor.
         if command == "track":
-            self.track_cursor(cursor, cursor_delta)
+            self.track_cursor(cursor_delta)
         elif command == "roll":
-            angle = self.calculate_roll_angle(cursor, -cursor_delta)
+            angle = self._calculate_roll_angle(cursor, cursor_delta)
             self.camera.roll(angle)
         elif command == "scale":
             self.try_scale(settings.camera.scale_speed * cursor_delta.y)
         elif command == "orbit":
-            angle = settings.camera.orbit_speed * -cursor_delta
+            cursor_delta.x = -cursor_delta.x
+            angle = settings.camera.orbit_speed * cursor_delta
             self.camera.orbit(self.target, angle.y, angle.x, self.orbit_type)
 
     @listen(Event.KEY)
@@ -143,13 +133,13 @@ class CameraController:
             self.view(command)
 
     @listen(Event.SCROLL)
-    def scroll(self, horizontal: int, vertical: int) -> None:
+    def scroll(self, horizontal: int, vertical: int, cursor: Vector3) -> None:
         if horizontal:
             self.camera.orbit(
                 self.target, 0, settings.camera.orbit_step * horizontal, self.orbit_type
             )
         if vertical:
-            self.scale_to_cursor(self.window.cursor_position, vertical * settings.camera.scale_in)
+            self.scale_to_cursor(cursor, vertical * settings.camera.scale_in)
 
     @listen(Event.WINDOW_RESIZE)
     def window_resize(self, width: int, height: int) -> None:
@@ -254,14 +244,12 @@ class CameraController:
 
         return False
 
-    def track_cursor(self, cursor: Vector3, cursor_delta: Vector3) -> None:
+    def track_cursor(self, cursor_delta: Vector3) -> None:
         """Move the camera the same amount that the cursor moved.
 
         That is, calculate the distance in cursor distance in NDC and convert that to camera motion.
         """
-        delta_ndc = self.window.ndc(cursor) - self.window.ndc(cursor - cursor_delta)
-
-        delta = self.camera.camera_space(delta_ndc)
+        delta = self.camera.camera_space(cursor_delta)
 
         if isinstance(self.camera.projection, PerspectiveProjection):
             delta *= -self.camera.world_to_camera(self.camera.target).z
@@ -269,9 +257,7 @@ class CameraController:
         self.camera.track(vector=-delta)
 
     def scale_to_cursor(self, cursor: Vector3, direction: int) -> None:
-        ndc = self.window.ndc(cursor)
-
-        cursor_camera_point = self.camera.camera_space(ndc)
+        cursor_camera_point = self.camera.camera_space(cursor)
 
         # This is delta z for perspective and delta width for orthographic
         delta_scale = direction * settings.camera.scale_step
@@ -285,11 +271,9 @@ class CameraController:
         if was_scaled:
             self.camera.track(delta_camera.x, delta_camera.y)
 
-    def calculate_roll_angle(self, cursor: Vector3, cursor_delta: Vector3) -> float:
-        # Calculate the initial cursor position.
-        cursor_start_point = cursor - cursor_delta
+    def _calculate_roll_angle(self, cursor: Vector3, cursor_delta: Vector3) -> float:
         # Calculate the radius vector from center screen to initial cursor position.
-        radius = cursor_start_point - (self.window.size / 2)
+        radius = cursor - cursor_delta
 
         if math.isclose(radius.length(), 0):
             return 0

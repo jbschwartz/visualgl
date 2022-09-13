@@ -44,16 +44,16 @@ class Window:
         # functions like a bit field with each bit representing a different key.
         self.current_key_modifiers: int = 0
 
-        # The last recorded cursor position.
+        # The last recorded cursor position in normalized device coordinates.
         self.last_cursor_position: Optional[Vector3] = None
 
     @property
     def cursor_position(self) -> Vector3:
-        """Return a Vector3 containing the current cursor position.
+        """Return a Vector3 containing the current cursor position in normalized device coordinates.
 
         The third component of the vector is always set to 0.
         """
-        return Vector3(*glfw.get_cursor_pos(self.window))
+        return self.ndc(Vector3(*glfw.get_cursor_pos(self.window)))
 
     @property
     def size(self) -> Vector3:
@@ -64,7 +64,10 @@ class Window:
         return Vector3(*glfw.get_window_size(self.window))
 
     def ndc(self, cursor_position: Vector3) -> Vector3:
-        """Return the normalized device coordinates at the provided cursor position.
+        """Return the normalized device coordinates at the provided cursor position in pixels.
+
+        Normalize device coordinates are a resolution-independent coordinate system. The bottom left
+        corner is (-1, -1). The top right corner is (1, 1). The center of the screen is (0, 0).
 
         The third component of the vector is always set to 0.
         """
@@ -113,19 +116,19 @@ class Window:
     @_callback
     def _cursor_pos(self, _window, x_position: int, y_position: int) -> None:
         """Emit the cursor position event or drag event if there are pressed mouse buttons."""
-        cursor_position = Vector3(x_position, y_position)
+        cursor_position_ndc = self.ndc(Vector3(x_position, y_position))
 
         if self.last_cursor_position is not None:
-            cursor_delta = cursor_position - self.last_cursor_position
+            cursor_delta = cursor_position_ndc - self.last_cursor_position
         else:
             cursor_delta = Vector3()
 
-        self.last_cursor_position = cursor_position
+        self.last_cursor_position = cursor_position_ndc
 
         self.emit(
             Event.DRAG if self.current_button_down is not None else Event.CURSOR,
             self.current_button_down,
-            cursor_position,
+            cursor_position_ndc,
             cursor_delta,
             self.current_key_modifiers,
         )
@@ -150,7 +153,7 @@ class Window:
     def _scroll(self, _window, x_direction: float, y_direction: float) -> None:
         """Emit the scroll event for both scroll directions."""
         # The scroll amounts are normalized by only passing on their direction.
-        self.emit(Event.SCROLL, sign(x_direction), sign(y_direction))
+        self.emit(Event.SCROLL, sign(x_direction), sign(y_direction), self.cursor_position)
 
     @_callback
     def _window_size(self, _window, width: int, height: int) -> None:
