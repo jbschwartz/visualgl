@@ -1,5 +1,12 @@
+import dataclasses
+
+from spatial3d import Vector3
+
+
+@dataclasses.dataclass
 class AmbientLight:
-    def __init__(self, position, color, intensity):
-        self.position = position
-        self.color = color
-        self.intensity = intensity
+    """An ambient light."""
+
+    position: Vector3
+    color: Vector3
+    intensity: float
