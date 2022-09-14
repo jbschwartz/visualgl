@@ -23,7 +23,15 @@ class _SettingsNamespace:
         """Return the setting value for the provided name."""
         return self._settings[name]
 
+    def __getitem__(self, name: str) -> Any:
+        """Return the setting value for the provided name."""
+        return self._settings[name]
+
     def __setattr__(self, name: str, value: Any) -> None:
+        """Set the setting value for the provided name."""
+        self._settings[name] = value
+
+    def __setitem__(self, name: str, value: Any) -> None:
         """Set the setting value for the provided name."""
         self._settings[name] = value
 
@@ -151,6 +159,38 @@ settings = Settings(
                 "scale_step": 15,
                 "track_step": 20,
                 "vertical_fov": math.radians(60),
+            },
+        ),
+        _SettingsNamespace(
+            "bindings",
+            **{
+                "camera.fit": "f",
+                "camera.normal_to": "v",
+                "camera.orbit": "button_middle",
+                "camera.orbit.down": "down",
+                "camera.orbit.left": "left",
+                "camera.orbit.right": "right",
+                "camera.orbit.toggle": "o",
+                "camera.orbit.up": "up",
+                "camera.projection.toggle": "p",
+                "camera.roll": "alt+button_middle",
+                "camera.roll.cw": "alt+right",
+                "camera.roll.ccw": "alt+left",
+                "camera.scale": "shift+button_middle",
+                "camera.scale.in": "z",
+                "camera.scale.out": "shift+z",
+                "camera.track": "ctrl+button_middle",
+                "camera.track.down": "ctrl+down",
+                "camera.track.left": "ctrl+left",
+                "camera.track.right": "ctrl+right",
+                "camera.track.up": "ctrl+up",
+                "camera.view.back": "ctrl+2",
+                "camera.view.bottom": "ctrl+6",
+                "camera.view.front": "ctrl+1",
+                "camera.view.iso": "ctrl+7",
+                "camera.view.left": "ctrl+4",
+                "camera.view.right": "ctrl+3",
+                "camera.view.top": "ctrl+5",
             },
         ),
     ]
