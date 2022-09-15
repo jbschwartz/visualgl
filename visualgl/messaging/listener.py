@@ -1,3 +1,4 @@
+import functools
 from typing import Callable
 
 from .event import Event
@@ -18,6 +19,7 @@ def listen(*events: Event) -> Callable:
 def listener(cls):
     """Listener class decorator registers all event handling methods."""
 
+    @functools.wraps(cls, updated=())
     class ListenerWrapper(cls):
         def __init__(self, *args, **kwargs) -> None:
             self._register_listeners()
