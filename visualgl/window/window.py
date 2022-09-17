@@ -6,11 +6,11 @@ from spatial3d import Vector3
 
 from visualgl.exceptions import WindowError
 
-from .messaging.emitter import emitter
-from .messaging.event import Event
-from .settings import settings
-from .timer import Timer
-from .utils import sign
+from ..messaging.emitter import emitter
+from ..messaging.event import Event
+from ..settings import settings
+from ..timer import Timer
+from ..utils import sign
 
 
 def _callback(function):
