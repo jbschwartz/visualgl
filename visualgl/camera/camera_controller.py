@@ -141,7 +141,6 @@ class CameraController:
         if vertical:
             self.scale_to_cursor(cursor, vertical * settings.camera.scale_in)
 
-    @listen(Event.WINDOW_RESIZE)
     def window_resize(self, width: int, height: int) -> None:
         if not math.isclose(height, 0):
             self.camera.projection.resize(width, height)

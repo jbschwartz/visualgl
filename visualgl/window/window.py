@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import List, Optional
 
 import glfw
 from OpenGL.GL import GL_TRUE
@@ -11,6 +11,9 @@ from ..messaging.event import Event
 from ..settings import settings
 from ..timer import Timer
 from ..utils import sign
+from .layout import Layout
+from .layouts.grid import Grid
+from .viewport import Viewport
 
 
 def _callback(function):
@@ -35,6 +38,12 @@ class Window:
         self.window = self._create_window(title, kwargs.get("width"), kwargs.get("height"))
 
         self._set_callbacks()
+
+        # Get the layout type used (and any arguments for its creation) in a tuple. Default to a
+        # one cell grid if nothing is provided. Note that the layout is not created until the
+        # `Window.layout` function is called with the constructed Viewports.
+        self._layout_type, self._layout_arguments = kwargs.get("layout", (Grid, []))
+        self.layout: Optional[Layout] = None
 
         # The current mouse button being held down in the window. Use None if no button is pressed.
         # Note: GLFW uses 0 to represent the left mouse button so do not attempt to clear this
@@ -62,6 +71,13 @@ class Window:
         The third component of the vector is always set to 0.
         """
         return Vector3(*glfw.get_window_size(self.window))
+
+    def assign_viewports(self, viewports: List[Viewport]) -> None:
+        """Assign the viewports to the window's layout.
+
+        This function constructs the Layout object.
+        """
+        self.layout = self._layout_type(viewports, *self._layout_arguments)
 
     def ndc(self, cursor_position: Vector3) -> Vector3:
         """Return the normalized device coordinates at the provided cursor position in pixels.
@@ -158,6 +174,7 @@ class Window:
     @_callback
     def _window_size(self, _window, width: int, height: int) -> None:
         """Emit the window resize event."""
+        self.layout.resize(width, height)
         self.emit(Event.WINDOW_RESIZE, width, height)
 
     def _create_window(self, title: str, width: Optional[int] = None, height: Optional[int] = None):

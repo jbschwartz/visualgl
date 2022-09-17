@@ -17,9 +17,10 @@ logger = logging.getLogger(__name__)
 
 @listener
 class Renderer:
-    def __init__(self, camera, light):
+    def __init__(self, camera, light, window):
         self.camera = camera
         self.light = light
+        self.window = window
         self.entities = {}
         self.shaders = {}
         self.ubos = []
@@ -70,18 +71,15 @@ class Renderer:
     def draw(self):
         self.update_environment()
 
-        for entity in self.entities.values():
-            with entity.shader as shader:
-                with entity.buffer as buffer:
-                    for instance, kwargs in entity.instances:
-                        entity.per_instance(instance, shader, **kwargs)
+        for viewport in self.window.layout:
+            with viewport:
+                for entity in self.entities.values():
+                    with entity.shader as shader:
+                        with entity.buffer as buffer:
+                            for instance, kwargs in entity.instances:
+                                entity.per_instance(instance, shader, **kwargs)
 
-                        gl.glDrawArrays(entity.draw_mode, 0, len(buffer))
-
-    @listen(Event.WINDOW_RESIZE)
-    def window_resize(self, width, height):
-        if width and height:
-            gl.glViewport(0, 0, width, height)
+                                gl.glDrawArrays(entity.draw_mode, 0, len(buffer))
 
     def initialize_shader(self, shader_name: str, shader_dir: str) -> None:
         if shader_name in self.shaders:
