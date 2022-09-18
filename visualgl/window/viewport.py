@@ -4,6 +4,7 @@ from typing import Optional
 import OpenGL.GL as gl
 from spatial3d import Vector3
 
+from .input_event import InputEvent
 
 
 class Viewport(abc.ABC):
@@ -35,8 +36,31 @@ class Viewport(abc.ABC):
         """Deactivate the viewport for rendering."""
 
     @abc.abstractmethod
+    def on_event(self, event: InputEvent) -> None:
+        """Respond to the provided input event.
+
+        Called by the layout when raw mouse and keyboard events are captured on the window.
+        """
+
+    @abc.abstractmethod
     def on_reflow(self, position: Vector3, size: Vector3) -> None:
         """Process the reflow of the viewport."""
+
+    def event(self, event: InputEvent) -> None:
+        """Respond to the provided input event.
+
+        Child classes of Viewport should not override this function. Instead they should implement
+        the `on_event` function which is called here.
+        """
+        if event.cursor_position:
+            cursor_ndc = self.ndc(event.cursor_position)
+            if event.cursor_delta:
+                previous_cursor_ndc = self.ndc(event.cursor_position - event.cursor_delta)
+                event.cursor_delta = cursor_ndc - previous_cursor_ndc
+
+            event.cursor_position = cursor_ndc
+
+        self.on_event(event)
 
     def reflow(self, position: Vector3, size: Vector3) -> None:
         """Update the position and size of the viewport.
@@ -54,3 +78,16 @@ class Viewport(abc.ABC):
 
         # Allow the child class to do any additional processing necessary.
         self.on_reflow(position, size)
+
+    def ndc(self, cursor_position: Vector3) -> Vector3:
+        """Return the normalized device coordinates at the provided cursor position (in pixels).
+
+        Normalize device coordinates are a resolution-independent coordinate system. The bottom left
+        corner is (-1, -1). The top right corner is (1, 1). The center of the viewport is (0, 0).
+
+        The third component of the returned vector is always set to 0.
+        """
+        viewport_position = cursor_position - self.position + round(self.size, 0)
+        return Vector3(
+            2 * viewport_position.x / self.size.x - 1, 1 - 2 * viewport_position.y / self.size.y
+        )

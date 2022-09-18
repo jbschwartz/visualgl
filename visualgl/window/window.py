@@ -10,6 +10,7 @@ from ..messaging.emitter import emitter
 from ..messaging.event import Event
 from ..settings import settings
 from ..timer import Timer
+from .input_event import InputEvent, InputEventType
 from .layout import Layout
 from .layouts.grid import Grid
 from .viewport import Viewport
@@ -48,6 +49,16 @@ class Window:
         This function constructs the Layout object.
         """
         self.layout = self._layout_type(viewports, *self._layout_arguments)
+
+    def event(self, event: InputEvent) -> None:
+        """Respond to the provided input event.
+
+        Called by the InputHandler when raw mouse and keyboard events are captured on the window.
+        """
+        if event.event_type is InputEventType.RESIZE:
+            self.layout.resize(event.size)
+        else:
+            self.layout.event(event)
 
     def run(self, fps_limit: Optional[int] = None) -> None:
         """Run the main event loop.

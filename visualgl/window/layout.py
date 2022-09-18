@@ -22,6 +22,13 @@ class Layout(abc.ABC):
         return self._viewports
 
     @abc.abstractmethod
+    def event(self, event: InputEvent) -> None:
+        """Respond to the provided input event.
+
+        Called by the window when raw mouse and keyboard events are captured.
+        """
+
+    @abc.abstractmethod
     def resize(self, size: Vector3) -> None:
         """Resize the layout to the provided `width` and `height` in pixels.
 

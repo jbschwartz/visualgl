@@ -5,6 +5,7 @@ from typing import List, Tuple, Union
 from spatial3d import Vector3
 
 from ..exceptions import LayoutError
+from ..input_event import InputEvent, InputEventType
 from ..layout import Layout
 from ..viewport import Viewport
 
@@ -43,10 +44,25 @@ class Grid(Layout):
                 f"Expected {self.num_cells} viewports but received {len(self._viewports)}"
             )
 
+        # Make the focused viewport the top left corner.
+        self.focused: Viewport = self._viewports[-len(self.row_heights)]
+
     @property
     def num_cells(self) -> int:
         """Return the number of cells in the grid."""
         return len(self.row_heights) * len(self.column_widths)
+
+    def event(self, event: InputEvent) -> None:
+        # Identify which viewport was clicked on.
+        if event.event_type is InputEventType.CLICK:
+            for viewport in self._viewports:
+                if event.cursor_position in viewport:
+                    self.focused = viewport
+                    break
+
+        # Only pass events to the currently focused viewport (so mouse input does not move a camera
+        # in a different viewport, for example).
+        self.focused.event(event)
 
     def resize(self, size: Vector3) -> None:
         """Resize the overall grid to the provided `size` in pixels."""
