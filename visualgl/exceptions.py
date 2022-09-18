@@ -2,6 +2,10 @@ class VisualError(Exception):
     pass
 
 
+class SettingsError(VisualError):
+    """Raised when a setting is invalid."""
+
+
 class WindowError(VisualError):
     """Raised when an error occurs during window initialization and creation."""
 
