@@ -6,10 +6,6 @@ class SettingsError(VisualError):
     """Raised when a setting is invalid."""
 
 
-class WindowError(VisualError):
-    """Raised when an error occurs during window initialization and creation."""
-
-
 class ParserError(VisualError):
     def __init__(self, line, msg):
         self.line = line

@@ -1,4 +1,5 @@
 from .input_event import InputEvent, InputEventType
+from .input_handler import InputHandler
 from .layout import Layout
 from .layouts.grid import Grid
 from .viewport import Viewport

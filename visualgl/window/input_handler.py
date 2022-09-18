@@ -4,9 +4,11 @@ from typing import Callable, Optional, Tuple
 import glfw
 
 from visualgl.bindings import Bindings
-from visualgl.exceptions import WindowError
 from visualgl.utils import sign
-from visualgl.window import InputEvent, Window
+
+from .exceptions import WindowError
+from .input_event import InputEvent
+from .window import Window
 
 logger = logging.getLogger(__name__)
 
