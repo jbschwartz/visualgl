@@ -333,7 +333,7 @@ python-versions = "*"
 
 [[package]]
 name = "spatial3d"
-version = "0.7.0"
+version = "0.7.1"
 description = "A Python library for representing and working with 3D objects."
 category = "main"
 optional = false
@@ -672,8 +672,8 @@ snowballstemmer = [
     {file = "snowballstemmer-2.2.0.tar.gz", hash = "sha256:09b16deb8547d3412ad7b590689584cd0fe25ec8db3be37788be3810cbf19cb1"},
 ]
 spatial3d = [
-    {file = "spatial3d-0.7.0-py3-none-any.whl", hash = "sha256:f36e31bd4bcd244929db3ca75a9c98364ed47731f30b386d5346eb4ea958a2ff"},
-    {file = "spatial3d-0.7.0.tar.gz", hash = "sha256:c52f85f07b7b5af76ef8ac5b76758df95a46bf653c6e250677815fdc9cbcf62a"},
+    {file = "spatial3d-0.7.1-py3-none-any.whl", hash = "sha256:175ce835da886d82aa850a0a9e28e3c52c0784a6853d49136c01d22df267cea6"},
+    {file = "spatial3d-0.7.1.tar.gz", hash = "sha256:a7cc41d1c3602aa31c7d8c2ec64d1928d4f5d549d841576cf8cff8b4baf79f65"},
 ]
 toml = [
     {file = "toml-0.10.2-py2.py3-none-any.whl", hash = "sha256:806143ae5bfb6a3c6e736a764057db0e6a0e05e338b5630894a5f779cabb4f9b"},

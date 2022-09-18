@@ -25,7 +25,7 @@ glfw = "^2.5.4"
 numpy = "^1.23.1"
 PyOpenGL = "^3.1.6"
 PyOpenGL-accelerate = {version = "^3.1.6", optional = true}
-spatial3d = "^0.7.0"
+spatial3d = "^0.7.1"
 
 [tool.poetry.extras]
 extras = ["PyOpenGL-accelerate"]
