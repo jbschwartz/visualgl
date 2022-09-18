@@ -4,8 +4,7 @@ import pytest
 from spatial3d import CoordinateAxes, Vector3
 from spatial3d.vector3 import almost_equal
 
-from visualgl import Camera
-from visualgl.camera.projection import PerspectiveProjection
+from visualgl.camera import Camera, OrthoProjection
 
 
 @pytest.fixture
@@ -26,7 +25,7 @@ def test_camera_initializes_with_default_transform(camera):
     assert almost_equal(basis[CoordinateAxes.Z], Vector3.Z())
 
     assert getattr(camera, "projection", None) is not None
-    assert isinstance(camera.projection, PerspectiveProjection)
+    assert isinstance(camera.projection, OrthoProjection)
 
 
 def test_camera_orbit_does_not_change_distance_to_target(camera):
