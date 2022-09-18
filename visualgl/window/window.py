@@ -4,12 +4,12 @@ import glfw
 from OpenGL.GL import GL_TRUE
 from spatial3d import Vector3
 
-from visualgl.exceptions import WindowError
+from visualgl.messaging.emitter import emitter
+from visualgl.messaging.event import Event
+from visualgl.settings import settings
+from visualgl.timer import Timer
 
-from ..messaging.emitter import emitter
-from ..messaging.event import Event
-from ..settings import settings
-from ..timer import Timer
+from .exceptions import WindowError
 from .input_event import InputEvent, InputEventType
 from .layout import Layout
 from .layouts.grid import Grid

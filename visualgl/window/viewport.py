@@ -32,19 +32,22 @@ class Viewport(abc.ABC):
 
         return self
 
-    def __exit__(self, *args):
+    def __exit__(self, *_args):
         """Deactivate the viewport for rendering."""
 
     @abc.abstractmethod
     def on_event(self, event: InputEvent) -> None:
         """Respond to the provided input event.
 
-        Called by the layout when raw mouse and keyboard events are captured on the window.
+        Called by the parent layout when raw mouse and keyboard events are captured on the window.
         """
 
     @abc.abstractmethod
     def on_reflow(self, position: Vector3, size: Vector3) -> None:
-        """Process the reflow of the viewport."""
+        """Process the reflow (change in position and size) of the viewport.
+
+        Called by the parent layout when the size of the layout changes.
+        """
 
     def event(self, event: InputEvent) -> None:
         """Respond to the provided input event.
