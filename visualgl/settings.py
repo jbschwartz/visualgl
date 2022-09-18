@@ -2,7 +2,7 @@ import json
 import logging
 import math
 import os
-from typing import Any, Dict, List
+from typing import Any, Dict, Generator, List, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +21,10 @@ class _SettingsNamespace:
 
     def __getattr__(self, name: str) -> Any:
         """Return the setting value for the provided name."""
-        return self._settings[name]
+        try:
+            return self._settings[name]
+        except KeyError as e:
+            raise AttributeError from e
 
     def __getitem__(self, name: str) -> Any:
         """Return the setting value for the provided name."""
@@ -38,6 +41,10 @@ class _SettingsNamespace:
     def asdict(self) -> Dict[str, Any]:
         """Return the settings in the namespace as a dictionary."""
         return self._settings
+
+    def items(self) -> Generator[Tuple[str, Any], None, None]:
+        """Return settings as a list of key-value Tuples."""
+        return ((key, value) for key, value in self._settings.items())
 
     def update(self, dictionary: Dict[str, Any]) -> None:
         """Update the settings namespace with the provided key-value pairs."""
@@ -81,7 +88,7 @@ class Settings:
 
         self._directory = path
 
-        logger.debug("Using '%s' for settings", self._directory)
+        logger.debug("Using '%s' for settings", self.file_path)
 
         self.load()
 
