@@ -1,6 +1,9 @@
 import abc
 from typing import Iterator, List
 
+from spatial3d import Vector3
+
+from .input_event import InputEvent
 from .viewport import Viewport
 
 
@@ -19,7 +22,7 @@ class Layout(abc.ABC):
         return self._viewports
 
     @abc.abstractmethod
-    def resize(self, width: int, height: int) -> None:
+    def resize(self, size: Vector3) -> None:
         """Resize the layout to the provided `width` and `height` in pixels.
 
         This method is also responsible for resizing all child viewports.

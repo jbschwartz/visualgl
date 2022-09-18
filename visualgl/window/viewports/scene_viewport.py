@@ -1,4 +1,4 @@
-from typing import Tuple
+from spatial3d import Vector3
 
 from ...camera.camera_controller import CameraController
 from ...messaging.event import Event
@@ -19,5 +19,5 @@ class SceneViewport(Viewport):
     def on_start(self) -> None:
         self.camera.view("view_iso")
 
-    def on_reflow(self, position: Tuple[int, int], size: Tuple[int, int]) -> None:
-        self.camera.window_resize(*self.size)
+    def on_reflow(self, _position: Vector3, _size: Vector3) -> None:
+        self.camera.window_resize(*self.size.xy)

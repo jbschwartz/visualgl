@@ -54,7 +54,7 @@ class Window:
 
         If `fps_limit` is provided, the loop will execute no faster than the provide value.
         """
-        self.layout.resize(*self.size.xy)
+        self.layout.resize(self.size)
         period = (1 / fps_limit) if fps_limit else 0
 
         update = Timer()

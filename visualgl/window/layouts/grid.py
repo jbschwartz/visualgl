@@ -2,6 +2,8 @@ import itertools
 import math
 from typing import List, Tuple, Union
 
+from spatial3d import Vector3
+
 from ..exceptions import LayoutError
 from ..layout import Layout
 from ..viewport import Viewport
@@ -46,8 +48,8 @@ class Grid(Layout):
         """Return the number of cells in the grid."""
         return len(self.row_heights) * len(self.column_widths)
 
-    def resize(self, width: int, height: int) -> None:
-        """Resize the overall grid to the provided `width` and `height` in pixels."""
+    def resize(self, size: Vector3) -> None:
+        """Resize the overall grid to the provided `size` in pixels."""
         # Get the starting position for each cell by taking the partial sum of previous cells.
         row_positions = list(itertools.accumulate(self.row_heights, initial=0.0))
         column_positions = list(itertools.accumulate(self.column_widths, initial=0.0))
@@ -56,8 +58,8 @@ class Grid(Layout):
         for row_height, row_position in zip(self.row_heights, row_positions):
             for column_width, column_position in zip(self.column_widths, column_positions):
                 self._viewports[cell_index].reflow(
-                    (int(column_position * width), int(row_position * height)),
-                    (int(column_width * width), int(row_height * height)),
+                    Vector3(int(column_position * size.x), int(row_position * size.y)),
+                    Vector3(int(column_width * size.x), int(row_height * size.y)),
                 )
 
                 cell_index += 1
