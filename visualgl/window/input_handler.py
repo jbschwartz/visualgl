@@ -7,7 +7,7 @@ from visualgl.bindings import Bindings
 from visualgl.utils import sign
 
 from .exceptions import WindowError
-from .input_event import InputEvent
+from .input_event import InputEvent, InputEventType
 from .window import Window
 
 logger = logging.getLogger(__name__)
@@ -60,6 +60,17 @@ class InputHandler:
 
         self._set_glfw_callbacks(window.glfw_window)
 
+    def _emit(self, event: InputEvent) -> None:
+        """Emit the provided event if a matching command is found."""
+        # Ignore key and button release & repeat events.
+        if event.action and event.action in [glfw.RELEASE, glfw.REPEAT]:
+            return
+
+        if command := self.bindings.command(event):
+            event.command = command
+
+        self._event_callback(event)
+
     def _set_glfw_callbacks(self, glfw_window) -> None:
         """Set all decorated callback methods on this instance as GLFW callbacks.
 
@@ -88,7 +99,7 @@ class InputHandler:
                 cursor_position[1] - self.last_cursor_position[1],
             )
 
-        self._event_callback(
+        self._emit(
             InputEvent.Movement(
                 self.current_button_down,
                 cursor_position,
@@ -103,15 +114,12 @@ class InputHandler:
     def _key(self, _glfw_window, key: int, _scancode, action: int, modifiers: int) -> None:
         """Emit the key event for key presses, releases, and repeats."""
         self.current_key_modifiers = modifiers
-
-        self._event_callback(InputEvent.Key(key, action, self.current_key_modifiers))
+        self._emit(InputEvent.Key(key, action, self.current_key_modifiers))
 
     @_glfw_callback
     def _mouse_button(self, glfw_window, button: int, action: int, modifiers: int) -> None:
         """Emit the click event for clicks and releases."""
-        self._event_callback(
-            InputEvent.Click(button, action, glfw.get_cursor_pos(glfw_window), modifiers)
-        )
+        self._emit(InputEvent.Click(button, action, glfw.get_cursor_pos(glfw_window), modifiers))
 
         # Record which mouse button is being held down. This does not support holding down multiple
         # buttons at once.
@@ -122,7 +130,7 @@ class InputHandler:
         """Emit the scroll event for both scroll directions."""
 
         # The scroll amounts are normalized by only passing on their direction.
-        self._event_callback(
+        self._emit(
             InputEvent.Scroll(
                 sign(x_direction), sign(y_direction), glfw.get_cursor_pos(glfw_window)
             )
@@ -131,4 +139,4 @@ class InputHandler:
     @_glfw_callback
     def _window_size(self, _window, width: int, height: int) -> None:
         """Emit the window resize event."""
-        self._event_callback(InputEvent.Resize(width, height))
+        self._emit(InputEvent.Resize(width, height))

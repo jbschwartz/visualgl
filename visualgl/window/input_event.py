@@ -32,6 +32,7 @@ class InputEvent:
 
         self.action: Optional[int] = kwargs.get("action")
         self.button: Optional[int] = kwargs.get("button")
+        self.command: Optional[Tuple[str, str, Optional[str]]] = None
         self.cursor_delta: Optional[Vector3] = kwargs.get("cursor_delta")
         self.cursor_position: Optional[Vector3] = kwargs.get("cursor_position")
         self.key: Optional[int] = kwargs.get("key")
