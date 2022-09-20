@@ -1,10 +1,7 @@
 import math
 
-import glfw
 from spatial3d import Transform, vector3
 
-from ..messaging.event import Event
-from ..messaging.listener import listen, listener
 from ..settings import settings
 from .camera import Camera, OrbitType
 from .projection import OrthoProjection, PerspectiveProjection
@@ -12,76 +9,45 @@ from .projection import OrthoProjection, PerspectiveProjection
 Vector3 = vector3.Vector3
 
 
-@listener
 class CameraController:
     VIEWS = {
-        "view_top": {"position": Vector3(0, 0, 1250), "up": Vector3(0, 1, 0)},
-        "view_bottom": {"position": Vector3(0, 0, -1250), "up": Vector3(0, -1, 0)},
-        "view_left": {"position": Vector3(-1250, 0, 500)},
-        "view_right": {"position": Vector3(1250, 0, 500)},
-        "view_front": {"position": Vector3(0, -1250, 500)},
-        "view_back": {"position": Vector3(0, 1250, 500)},
-        "view_iso": {"position": Vector3(750, -750, 1250)},
+        "top": {"position": Vector3(0, 0, 1250), "up": Vector3(0, 1, 0)},
+        "bottom": {"position": Vector3(0, 0, -1250), "up": Vector3(0, -1, 0)},
+        "left": {"position": Vector3(-1250, 0, 500)},
+        "right": {"position": Vector3(1250, 0, 500)},
+        "front": {"position": Vector3(0, -1250, 500)},
+        "back": {"position": Vector3(0, 1250, 500)},
+        "iso": {"position": Vector3(750, -750, 1250)},
     }
 
-    def __init__(self, camera: Camera, bindings, scene):
+    def __init__(self, camera: Camera, scene):
         self.camera = camera
-        self.bindings = bindings
         self.scene = scene
 
-        if len(self.scene.entities) > 0:
-            self.target = self.scene.aabb.center
-        else:
-            self.target = Vector3()
-
+        self.target = Vector3()
         self.orbit_type = OrbitType.CONSTRAINED
 
-    @listen(Event.CLICK)
-    def click(self, button, action, cursor, mods):
-        if button == glfw.MOUSE_BUTTON_MIDDLE and action == glfw.PRESS:
-            ray = self.camera.cast_ray(cursor)
-            x = self.scene.intersect(ray)
+    def cast_ray(self, cursor_position):
+        return self.camera.cast_ray(cursor_position)
 
-            if x.hit:
-                self.target = ray.evaluate(x.t)
-            else:
-                if len(self.scene.entities) > 0:
-                    self.target = self.scene.aabb.center
+    def command(self, event):
+        _module, command, parameter, *_ = event.command + [None]
 
-            assert self.target is not None, "There must always be a valid camera target."
-            assert isinstance(self.target, Vector3), "Camera target must be a Vector3."
-
-            # TODO: Do I really mean to be putting a target attribute onto the camera instance?
-            # What happened to self.target?
-            self.camera.target = self.target
-
-    @listen(Event.DRAG)
-    def drag(self, button, cursor, cursor_delta, modifiers):
-        command = self.bindings.get_command((modifiers, button))
-
-        # Invert the delta in places so that the position of the scene follows the cursor
-        # as opposed to the position of the camera following the cursor.
         if command == "track":
-            self.track_cursor(cursor_delta)
+            self.track(event.cursor_delta, parameter)
+
         elif command == "roll":
-            angle = self._calculate_roll_angle(cursor, cursor_delta)
-            self.camera.roll(angle)
+            self.roll(event.cursor_position, event.cursor_delta, parameter)
+
         elif command == "scale":
-            self.try_scale(settings.camera.scale_speed * cursor_delta.y)
+            self.scale(event.cursor_delta, parameter)
+
         elif command == "orbit":
-            cursor_delta.x = -cursor_delta.x
-            angle = settings.camera.orbit_speed * cursor_delta
-            self.camera.orbit(self.target, angle.y, angle.x, self.orbit_type)
+            self.orbit(event.cursor_delta, parameter)
 
-    @listen(Event.KEY)
-    def key(self, key, action, modifiers):
-        if action == glfw.PRESS:
-            return
-
-        command = self.bindings.get_command((modifiers, key))
-
-        if command == "fit":
+        elif command == "fit":
             self.camera.fit(self.scene.aabb)
+
         elif command == "orbit_toggle":
             self.orbit_type = (
                 OrbitType.FREE
@@ -93,57 +59,35 @@ class CameraController:
         elif command == "normal_to":
             self.normal_to()
 
-        elif command == "track_left":
-            self.camera.track(-settings.camera.track_step, 0)
-        elif command == "track_right":
-            self.camera.track(settings.camera.track_step, 0)
-        elif command == "track_up":
-            self.camera.track(0, settings.camera.track_step)
-        elif command == "track_down":
-            self.camera.track(0, -settings.camera.track_step)
+        elif command == "view":
+            self.view(parameter)
 
-        elif command == "orbit_left":
-            self.camera.orbit(self.target, 0, -settings.camera.orbit_step, self.orbit_type)
-        elif command == "orbit_right":
-            self.camera.orbit(self.target, 0, settings.camera.orbit_step, self.orbit_type)
-        elif command == "orbit_up":
-            self.camera.orbit(self.target, -settings.camera.orbit_step, 0, self.orbit_type)
-        elif command == "orbit_down":
-            self.camera.orbit(self.target, settings.camera.orbit_step, 0, self.orbit_type)
-
-        elif command == "roll_cw":
-            self.camera.roll(-settings.camera.roll_step)
-        elif command == "roll_ccw":
-            self.camera.roll(settings.camera.roll_step)
-
-        elif command == "zoom_in":
-            self.try_scale(-settings.camera.scale_step)
-        elif command == "zoom_out":
-            self.try_scale(settings.camera.scale_step)
-
-        elif command in [
-            "view_front",
-            "view_back",
-            "view_right",
-            "view_left",
-            "view_top",
-            "view_bottom",
-            "view_iso",
-        ]:
-            self.view(command)
-
-    @listen(Event.SCROLL)
-    def scroll(self, horizontal: int, vertical: int, cursor: Vector3) -> None:
-        if horizontal:
+    def scroll(self, event) -> None:
+        if event.scroll.x:
             self.camera.orbit(
-                self.target, 0, settings.camera.orbit_step * horizontal, self.orbit_type
+                self.target, 0, settings.camera.orbit_step * event.scroll.x, self.orbit_type
             )
-        if vertical:
-            self.scale_to_cursor(cursor, vertical * settings.camera.scale_in)
+        if event.scroll.y:
+            self.scale_to_cursor(event.cursor_position, event.scroll.y * settings.camera.scale_in)
 
-    def window_resize(self, width: int, height: int) -> None:
-        if not math.isclose(height, 0):
-            self.camera.projection.resize(width, height)
+    def update_output_size(self, size: Vector3) -> None:
+        """Update the output size of the camera."""
+        assert size.x > 0 and size.y > 0, "Camera output size must be greater than zero."
+        self.camera.projection.resize(*size.xy)
+
+    def orbit(self, cursor_delta, direction: str) -> None:
+        if direction == "left":
+            self.camera.orbit(self.target, 0, -settings.camera.orbit_step, self.orbit_type)
+        elif direction == "right":
+            self.camera.orbit(self.target, 0, settings.camera.orbit_step, self.orbit_type)
+        elif direction == "up":
+            self.camera.orbit(self.target, -settings.camera.orbit_step, 0, self.orbit_type)
+        elif direction == "down":
+            self.camera.orbit(self.target, settings.camera.orbit_step, 0, self.orbit_type)
+        else:
+            cursor_delta.x = -cursor_delta.x
+            angle = settings.camera.orbit_speed * cursor_delta
+            self.camera.orbit(self.target, angle.y, angle.x, self.orbit_type)
 
     def normal_to(self) -> None:
         minimum = math.radians(180)
@@ -243,11 +187,25 @@ class CameraController:
 
         return False
 
-    def track_cursor(self, cursor_delta: Vector3) -> None:
+    def track(self, cursor_delta: Vector3, direction: str) -> None:
         """Move the camera the same amount that the cursor moved.
 
         That is, calculate the distance in cursor distance in NDC and convert that to camera motion.
         """
+        # Invert the delta in places so that the position of the scene follows the cursor
+        # as opposed to the position of the camera following the cursor.
+        if cursor_delta is None:
+            if direction == "left":
+                self.camera.track(-settings.camera.track_step, 0)
+            elif direction == "right":
+                self.camera.track(settings.camera.track_step, 0)
+            elif direction == "up":
+                self.camera.track(0, settings.camera.track_step)
+            elif direction == "down":
+                self.camera.track(0, -settings.camera.track_step)
+
+            return
+
         delta = self.camera.camera_space(cursor_delta)
 
         if isinstance(self.camera.projection, PerspectiveProjection):
@@ -265,29 +223,43 @@ class CameraController:
         if isinstance(self.camera.projection, OrthoProjection):
             delta_camera /= self.camera.projection.width
 
-        was_scaled = self.try_scale(delta_scale)
+        was_scaled = self.scale(Vector3(0, delta_scale), None)
 
         if was_scaled:
             self.camera.track(delta_camera.x, delta_camera.y)
 
-    def _calculate_roll_angle(self, cursor: Vector3, cursor_delta: Vector3) -> float:
-        # Calculate the radius vector from center screen to initial cursor position.
-        radius = cursor - cursor_delta
+    def roll(self, cursor: Vector3, cursor_delta: Vector3, direction: str) -> float:
+        if direction == "cw":
+            self.camera.roll(-settings.camera.roll_step)
+        elif direction == "ccw":
+            self.camera.roll(settings.camera.roll_step)
+        else:
+            # Calculate the radius vector from center screen to initial cursor position.
+            radius = cursor - cursor_delta
 
-        if math.isclose(radius.length(), 0):
-            return 0
+            if math.isclose(radius.length(), 0):
+                return 0
 
-        # Calculate the unit tangent vector to the circle at cursor_start_point.
-        tangent = Vector3(radius.y, -radius.x).normalize()
-        # The contribution to the roll is the projection of the cursor_delta vector onto the tangent
-        # vector.
-        return settings.camera.roll_speed * cursor_delta * tangent
+            # Calculate the unit tangent vector to the circle at cursor_start_point.
+            tangent = Vector3(radius.y, -radius.x).normalize()
+            # The contribution to the roll is the projection of the cursor_delta vector onto the
+            # tangent vector.
+            angle = settings.camera.roll_speed * cursor_delta * tangent
+            self.camera.roll(angle)
 
-    def try_scale(self, amount: float) -> bool:
+    def scale(self, cursor_delta, direction: str) -> bool:
         """Attempt to scale the scene by the given amount. Return True if the scale is successful.
 
         Scaling is successful if it does not cause clipping in the scene.
         """
+
+        if direction == "in":
+            amount = -settings.camera.scale_step
+        elif direction == "out":
+            amount = settings.camera.scale_step
+        else:
+            amount = settings.camera.scale_speed * cursor_delta.y
+
         if isinstance(self.camera.projection, PerspectiveProjection):
             if self.dolly_will_clip(amount):
                 return False

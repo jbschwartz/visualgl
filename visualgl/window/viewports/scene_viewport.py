@@ -21,22 +21,39 @@ class SceneViewport(Viewport):
 
     def on_event(self, event: InputEvent) -> None:
         """Pass the event onto the Camera."""
-        if event.event_type is InputEventType.DRAG:
-            self.camera.drag(
-                event.button, event.cursor_position, event.cursor_delta, event.modifiers
-            )
+        if event.event_type in [InputEventType.DRAG, InputEventType.KEY]:
+            if event.command and event.command[0] == "camera":
+                self.camera.command(event)
         elif event.event_type is InputEventType.CLICK:
-            self.camera.click(event.button, event.action, event.cursor_position, event.modifiers)
-        elif event.event_type is InputEventType.KEY:
-            self.camera.key(event.key, event.action, event.modifiers)
+            self._update_camera_target(event.cursor_position)
         elif event.event_type is InputEventType.SCROLL:
-            self.camera.scroll(*event.scroll.xy, event.cursor_position)
+            self.camera.scroll(event)
 
     def on_reflow(self, _position: Vector3, _size: Vector3) -> None:
         """Update the camera's aspect ratio when the viewport changes size."""
-        self.camera.window_resize(*self.size.xy)
+        self.camera.update_output_size(self.size)
 
     @listen(Event.START_RENDERER)
     def on_start(self) -> None:
         """Set up the scene and camera when the viewport is first set to render."""
-        self.camera.view("view_iso")
+        self._initialize_camera()
+
+    def _initialize_camera(self) -> None:
+        if len(self.scene.entities) > 0:
+            self.camera.target = self.scene.aabb.center
+        self.camera.view("iso")
+
+    def _update_camera_target(self, cursor_position: Vector3) -> None:
+        ray = self.camera.cast_ray(cursor_position)
+        intersection = self.scene.intersect(ray)
+
+        if intersection.hit:
+            self.camera.target = ray.evaluate(intersection.t)
+        else:
+            if len(self.scene.entities) > 0:
+                self.camera.target = self.scene.aabb.center
+            else:
+                self.camera.target = Vector3()
+
+        assert self.camera.target is not None, "There must always be a valid camera target."
+        assert isinstance(self.camera.target, Vector3), "Camera target must be a Vector3."
