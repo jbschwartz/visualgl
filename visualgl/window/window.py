@@ -1,3 +1,4 @@
+import weakref
 from functools import cached_property
 from typing import List, Optional
 
@@ -34,6 +35,8 @@ class Window:
         # `Window.layout` function is called with the constructed Viewports.
         self._layout_type, self._layout_arguments = kwargs.get("layout", (Grid, []))
         self.layout: Optional[Layout] = None
+
+        self._finalizer = weakref.finalize(self, self._update_settings)
 
     @cached_property
     def size(self) -> Vector3:
@@ -96,17 +99,6 @@ class Window:
             glfw.swap_buffers(self.glfw_window)
             glfw.poll_events()
 
-        # Update and write the window settings. This will be used by the next session.
-        settings.window.update(
-            {
-                "width": self.size.x,
-                "height": self.size.y,
-                "position": glfw.get_window_pos(self.glfw_window),
-            }
-        )
-
-        settings.write()
-
     def _create_window(self, title: str, width: Optional[int] = None, height: Optional[int] = None):
         """Create the window with the provided settings using GLFW."""
         # Try to use the _settings values if they exist. Otherwise rely on defaults.
@@ -141,6 +133,21 @@ class Window:
             error_string += f" (code {code})"
 
         return error_string
+
+    def _update_settings(self) -> None:
+        """Update and write the window settings.
+
+        This information saved wil be used by the next session.
+        """
+        settings.window.update(
+            {
+                "width": self.size.x,
+                "height": self.size.y,
+                "position": glfw.get_window_pos(self.glfw_window),
+            }
+        )
+
+        settings.write()
 
     def _window_hints(self) -> None:
         """Set window hints."""
