@@ -20,6 +20,7 @@ class UniformBuffer:
         self.id = glGenBuffers(1)  # OpenGL buffer ID
         self.name = name
         self.binding_index = binding_index
+        self.builder = lambda: None
 
         glBindBufferBase(GL_UNIFORM_BUFFER, self.binding_index, self.id)
 

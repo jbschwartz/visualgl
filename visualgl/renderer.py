@@ -9,6 +9,7 @@ from .messaging.listener import listen, listener
 from .opengl.buffer import Buffer
 from .opengl.shader import ShaderType
 from .opengl.shader_program import ShaderProgram
+from .opengl.uniform_buffer import Mapping, UniformBuffer
 
 Entity = namedtuple("Entity", "name shader draw_mode buffer instances per_instance add_children")
 
@@ -17,13 +18,11 @@ logger = logging.getLogger(__name__)
 
 @listener
 class Renderer:
-    def __init__(self, camera, light, window):
-        self.camera = camera
-        self.light = light
+    def __init__(self, window):
         self.window = window
         self.entities = {}
         self.shaders = {}
-        self.ubos = []
+        self.ubos = [UniformBuffer("Matrices", 1), UniformBuffer("Light", 2)]
 
     @listen(Event.START_RENDERER)
     def start(self) -> None:
@@ -69,10 +68,16 @@ class Renderer:
 
     @listen(Event.DRAW)
     def draw(self):
-        self.update_environment()
-
         for viewport in self.window.layout:
             with viewport:
+                self.ubos[0].bind(
+                    Mapping(viewport.camera.camera, ["projection.matrix", "world_to_camera"])
+                )
+
+                self.ubos[1].bind(Mapping(viewport.scene.light, ["position", "color", "intensity"]))
+
+                self.load_buffer_objects()
+
                 for entity in self.entities.values():
                     with entity.shader as shader:
                         with entity.buffer as buffer:
@@ -163,6 +168,3 @@ class Renderer:
             }
 
             self.add(entity_type, instance, parent, **per_instance_kwargs)
-
-    def update_environment(self) -> None:
-        self.light.position = self.camera.position
