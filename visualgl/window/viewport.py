@@ -22,6 +22,15 @@ class Viewport(abc.ABC):
         # The width (`self.size.x`) and height (`self.size.y`) of the viewport in pixels.
         self.size: Optional[Vector3] = None
 
+    def __contains__(self, position: Vector3) -> bool:
+        """Return True if the pixel position is contained in the viewport."""
+        top_right = self.position + self.size
+
+        return (
+            self.position.x <= position.x < top_right.x
+            and self.position.y <= position.y < top_right.y
+        )
+
     def __enter__(self) -> "Viewport":
         """Activate the viewport for rendering."""
         assert (
