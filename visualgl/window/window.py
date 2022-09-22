@@ -1,7 +1,7 @@
+from functools import cached_property
 from typing import List, Optional
 
 import glfw
-from OpenGL.GL import GL_TRUE
 from spatial3d import Vector3
 
 from visualgl.messaging.emitter import emitter
@@ -35,7 +35,7 @@ class Window:
         self._layout_type, self._layout_arguments = kwargs.get("layout", (Grid, []))
         self.layout: Optional[Layout] = None
 
-    @property
+    @cached_property
     def size(self) -> Vector3:
         """Return a Vector3 containing the current size of the window.
 
@@ -55,7 +55,17 @@ class Window:
 
         Called by the InputHandler when raw mouse and keyboard events are captured on the window.
         """
+        # Convert GLFW's content coordinate system (where Y runs from the top of the screen to the
+        # bottom) to OpenGL's `glViewport` screen space (where Y runs from the bottom of the screen
+        # to the top).
+        if event.cursor_position:
+            event.cursor_position.y = self.size.y - event.cursor_position.y
+
         if event.event_type is InputEventType.RESIZE:
+            # Invalidate the cached window size now that the window has changed.
+            if self.size:
+                del self.size
+            # Inform the layout that the window has changed so that viewports can also be scaled.
             self.layout.resize(event.size)
         else:
             self.layout.event(event)
@@ -66,6 +76,7 @@ class Window:
         If `fps_limit` is provided, the loop will execute no faster than the provide value.
         """
         self.layout.resize(self.size)
+
         period = (1 / fps_limit) if fps_limit else 0
 
         update = Timer()
@@ -135,5 +146,5 @@ class Window:
         """Set window hints."""
         glfw.window_hint(glfw.CONTEXT_VERSION_MAJOR, 4)
         glfw.window_hint(glfw.CONTEXT_VERSION_MINOR, 6)
-        glfw.window_hint(glfw.RESIZABLE, GL_TRUE)
+        glfw.window_hint(glfw.RESIZABLE, True)
         glfw.window_hint(glfw.SAMPLES, 4)

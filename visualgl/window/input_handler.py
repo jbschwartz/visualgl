@@ -89,7 +89,11 @@ class InputHandler:
 
     @_glfw_callback
     def _cursor_pos(self, _glfw_window, x_position: int, y_position: int) -> None:
-        """Emit the cursor position event or drag event if there are pressed mouse buttons."""
+        """Emit the cursor position event or drag event if there are pressed mouse buttons.
+
+        GLFW provides the X and Y position with respect to the top left corner of the window where
+        X runs positive from left to right and Y runs positive from top to bottom.
+        """
         cursor_position = (x_position, y_position)
 
         cursor_delta = (0, 0)
