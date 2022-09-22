@@ -17,7 +17,7 @@ class SceneViewport(Viewport):
         super().__init__()
 
         self.scene = scene
-        self.camera = camera
+        self.camera = camera or CameraController(self.scene)
 
     def on_event(self, event: InputEvent) -> None:
         """Pass the event onto the Camera."""

@@ -20,8 +20,8 @@ class CameraController:
         "iso": {"position": Vector3(750, -750, 1250)},
     }
 
-    def __init__(self, camera: Camera, scene):
-        self.camera = camera
+    def __init__(self, scene):
+        self.camera = Camera()
         self.scene = scene
 
         self.target = Vector3()
