@@ -1,7 +1,6 @@
 import logging
-from typing import Any
 import os
-from typing import Iterable
+from typing import Any, Iterable
 
 import OpenGL.GL as gl
 

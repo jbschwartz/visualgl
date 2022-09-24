@@ -35,6 +35,7 @@ class SceneViewport(Viewport):
         self._initialize_camera()
 
     def on_update(self, delta: float) -> None:
+        """Update the scene with the amount of time elapsed (`delta`)."""
         self.scene.update(delta)
 
     def _initialize_camera(self) -> None:

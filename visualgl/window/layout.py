@@ -14,6 +14,7 @@ class Layout(abc.ABC):
         self._viewports = viewports
 
     def __iter__(self) -> Iterator[Viewport]:
+        """Return an iterator to the viewports in the layout."""
         return iter(self._viewports)
 
     @property

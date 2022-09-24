@@ -59,4 +59,4 @@ ignore = "D100, D107, D213, D203"
 
 [tool.pylint.'MESSAGES CONTROL']
 disable = "C0114"
-good-names = "e,x,y,z"
+good-names = "e,x,y,z,id"

@@ -1,3 +1,5 @@
+"""Window subpackage."""
+
 from .input_event import InputEvent, InputEventType
 from .input_handler import InputHandler
 from .layout import Layout

@@ -7,14 +7,14 @@ from visualgl.bindings import Bindings
 from visualgl.utils import sign
 
 from .exceptions import WindowError
-from .input_event import InputEvent, InputEventType
+from .input_event import InputEvent
 from .window import Window
 
 logger = logging.getLogger(__name__)
 
 
 def _glfw_callback(function):
-    """Decorator to indicate that the method is a GLFW callback function."""
+    """Decorate the method as a GLFW callback function."""
     # pylint: disable=protected-access
     # Use a protected attribute so as not to disturb any aspects of the function.
     function._glfw_callback = getattr(glfw, f"set_{function.__name__.lstrip('_')}_callback")
@@ -35,7 +35,6 @@ class InputHandler:
         If no `event_callback` is given, try looking for an `event` method on the window. If one is
         not available, raise a `WindowError`.
         """
-
         if not event_callback:
             if not (event_callback := getattr(window, "event", None)):
                 raise WindowError("No event callback found on window. Ignoring all input")
@@ -132,7 +131,6 @@ class InputHandler:
     @_glfw_callback
     def _scroll(self, glfw_window, x_direction: float, y_direction: float) -> None:
         """Emit the scroll event for both scroll directions."""
-
         # The scroll amounts are normalized by only passing on their direction.
         self._emit(
             InputEvent.Scroll(
