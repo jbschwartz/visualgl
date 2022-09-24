@@ -1,13 +1,19 @@
 from typing import Iterable
 
+from visualgl.exceptions import VisualError
 
-class UniformArraySizeError(Exception):
+
+class OpenGLError(VisualError):
+    """Raised for OpenGL related errors."""
+
+
+class UniformArraySizeError(OpenGLError):
     def __init__(self, got_number: int, expected_number: int, expected_types: Iterable[type]):
         try:
             expected_type_string = ", ".join(
                 [f"`{expected.__name__}`" for expected in expected_types]
             )
-        except TypeError as e:
+        except TypeError:
             expected_type_string = expected_types.__name__
 
         super().__init__(
@@ -15,17 +21,17 @@ class UniformArraySizeError(Exception):
         )
 
 
-class UniformSizeError(Exception):
+class UniformSizeError(OpenGLError):
     pass
 
 
-class UniformTypeError(Exception):
+class UniformTypeError(OpenGLError):
     def __init__(self, got_type: type, expected_types: Iterable[type]):
         try:
             expected_type_string = ", ".join(
                 [f"`{expected.__name__}`" for expected in expected_types]
             )
-        except TypeError as e:
+        except TypeError:
             expected_type_string = expected_types.__name__
 
         super().__init__(

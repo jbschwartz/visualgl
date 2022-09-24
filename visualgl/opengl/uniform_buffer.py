@@ -2,7 +2,7 @@ from collections import namedtuple
 from typing import Iterable
 
 import numpy as np
-from OpenGL.GL import *
+import OpenGL.GL as gl
 from spatial3d import Matrix4, Transform, Vector3
 
 Mapping = namedtuple("Mapping", "object fields")
@@ -17,12 +17,12 @@ class UniformBuffer:
     """OpenGL Uniform Buffer Object."""
 
     def __init__(self, name: str, binding_index: int) -> None:
-        self.id = glGenBuffers(1)  # OpenGL buffer ID
+        self.id = gl.glGenBuffers(1)  # OpenGL buffer ID
         self.name = name
         self.binding_index = binding_index
         self.builder = lambda: None
 
-        glBindBufferBase(GL_UNIFORM_BUFFER, self.binding_index, self.id)
+        gl.glBindBufferBase(gl.GL_UNIFORM_BUFFER, self.binding_index, self.id)
 
     def resolve_dot_notation(self, start_object, field):
         current = start_object
@@ -89,6 +89,6 @@ class UniformBuffer:
     def load(self):
         data_buffer = np.array(self.builder(), dtype=np.float32)
 
-        glBindBuffer(GL_UNIFORM_BUFFER, self.id)
-        glBufferData(GL_UNIFORM_BUFFER, data_buffer.nbytes, data_buffer, GL_DYNAMIC_DRAW)
-        glBindBuffer(GL_UNIFORM_BUFFER, 0)
+        gl.glBindBuffer(gl.GL_UNIFORM_BUFFER, self.id)
+        gl.glBufferData(gl.GL_UNIFORM_BUFFER, data_buffer.nbytes, data_buffer, gl.GL_DYNAMIC_DRAW)
+        gl.glBindBuffer(gl.GL_UNIFORM_BUFFER, 0)

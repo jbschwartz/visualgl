@@ -1,6 +1,6 @@
 import unittest
 
-from visualgl import FrozenDict
+from visualgl.opengl.shader_program import FrozenDict
 
 
 class TestFrozenDict(unittest.TestCase):

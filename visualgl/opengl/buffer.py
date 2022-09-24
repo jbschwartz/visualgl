@@ -4,7 +4,7 @@ from ctypes import c_void_p
 from typing import Iterable
 
 import numpy as np
-from OpenGL.GL import *
+import OpenGL.GL as gl
 from spatial3d import Mesh, Vector3
 
 from .shader_program import ShaderProgram
@@ -12,12 +12,19 @@ from .shader_program import ShaderProgram
 logger = logging.getLogger(__name__)
 
 MESH_BUFFER_ATTRS = {
-    "position": {"type": GL_FLOAT, "number_of_components": 3},
-    "normal": {"type": GL_FLOAT, "number_of_components": 3},
-    "mesh_index": {"type": GL_INT, "number_of_components": 1},
+    "position": {"type": gl.GL_FLOAT, "number_of_components": 3},
+    "normal": {"type": gl.GL_FLOAT, "number_of_components": 3},
+    "mesh_index": {"type": gl.GL_INT, "number_of_components": 1},
 }
 
-ATTRIBI_TYPES = (GL_BYTE, GL_UNSIGNED_BYTE, GL_SHORT, GL_UNSIGNED_SHORT, GL_INT, GL_UNSIGNED_INT)
+ATTRIBI_TYPES = (
+    gl.GL_BYTE,
+    gl.GL_UNSIGNED_BYTE,
+    gl.GL_SHORT,
+    gl.GL_UNSIGNED_SHORT,
+    gl.GL_INT,
+    gl.GL_UNSIGNED_INT,
+)
 
 
 def get_buffer_data(mesh: Mesh, index: int = 0) -> np.array:
@@ -36,20 +43,21 @@ class Buffer:
     """OpenGL Buffer instance."""
 
     def __init__(self, data: np.array = None, attributes: dict = None, size: int = None) -> None:
-        self.vao = glGenVertexArrays(1)
+        self.vao = gl.glGenVertexArrays(1)
 
         if data is not None:
             if len(data) == 0 or attributes is None:
-                return logger.warn(f"Buffer given no data or no vertex attributes to access it.")
+                logger.warning("Buffer given no data or no vertex attributes to access it.")
+                return
             elif size is not None:
-                logger.warn(f"Buffer size passed but ignored (since data is provided).")
+                logger.warning("Buffer size passed but ignored (since data is provided).")
 
-            self.vbo = glGenBuffers(1)
+            self.vbo = gl.glGenBuffers(1)
             self.data = data
             self.attributes = attributes
         else:
             if size is None:
-                return logger.warn(f"Buffer given no data, attributes, or size.")
+                logger.warning("Buffer given no data, attributes, or size.")
 
             self._size = size
 
@@ -57,15 +65,15 @@ class Buffer:
         """Return the number of elements in the buffer."""
         if self.is_procedural:
             return self._size
-        else:
-            return len(self.data)
+
+        return len(self.data)
 
     def __enter__(self) -> "Buffer":
-        glBindVertexArray(self.vao)
+        gl.glBindVertexArray(self.vao)
         return self
 
     def __exit__(self, exc_type, exc_value, exc_traceback) -> None:
-        glBindVertexArray(0)
+        gl.glBindVertexArray(0)
 
     @classmethod
     def from_mesh(cls, mesh: Mesh) -> "Buffer":
@@ -91,7 +99,7 @@ class Buffer:
         data_list = [(point.xyz,) for point in points]
         data = np.array(data_list, dtype=[("", np.float32, 3)])
 
-        return cls(data, {"position": {"type": GL_FLOAT, "number_of_components": 3}})
+        return cls(data, {"position": {"type": gl.GL_FLOAT, "number_of_components": 3}})
 
     @classmethod
     def Procedural(cls, size) -> "Buffer":
@@ -117,8 +125,8 @@ class Buffer:
                     f"vin_{attribute_name}"
                 )
             except AttributeError:
-                logger.warn(
-                    f"Attribute `vin_{attribute_name}` not found in shader program `{sp.name}`"
+                logger.warning(
+                    "Attribute `vin_%s` not found in shader program `%s`", attribute_name, sp.name
                 )
 
     def load(self) -> None:
@@ -129,10 +137,10 @@ class Buffer:
             ["location" in parameters for parameters in self.attributes.values()]
         ), "Buffer attribute locations must be set before the buffer can be loaded"
 
-        glBindVertexArray(self.vao)
+        gl.glBindVertexArray(self.vao)
 
-        glBindBuffer(GL_ARRAY_BUFFER, self.vbo)
-        glBufferData(GL_ARRAY_BUFFER, self.data.nbytes, self.data, GL_STATIC_DRAW)
+        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.vbo)
+        gl.glBufferData(gl.GL_ARRAY_BUFFER, self.data.nbytes, self.data, gl.GL_STATIC_DRAW)
 
         offset = 0
         for parameters in self.attributes.values():
@@ -140,7 +148,7 @@ class Buffer:
                 continue
 
             if parameters["type"] in ATTRIBI_TYPES:
-                glVertexAttribIPointer(
+                gl.glVertexAttribIPointer(
                     parameters["location"],
                     parameters["number_of_components"],
                     parameters["type"],
@@ -148,11 +156,11 @@ class Buffer:
                     c_void_p(offset),
                 )
             else:
-                glVertexAttribPointer(
+                gl.glVertexAttribPointer(
                     parameters["location"],
                     parameters["number_of_components"],
                     parameters["type"],
-                    GL_FALSE,
+                    gl.GL_FALSE,
                     self.stride,
                     c_void_p(offset),
                 )
@@ -160,7 +168,7 @@ class Buffer:
             # TODO: Do not assume that all buffer values are four bytes
             offset += 4 * parameters["number_of_components"]
 
-            glEnableVertexAttribArray(parameters["location"])
+            gl.glEnableVertexAttribArray(parameters["location"])
 
-        glBindBuffer(GL_ARRAY_BUFFER, 0)
-        glBindVertexArray(0)
+        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
+        gl.glBindVertexArray(0)

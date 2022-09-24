@@ -17,10 +17,11 @@ def flatten_elements(element) -> Iterable[Number]:
         return element.elements
     elif isinstance(element, (list, tuple)) and isinstance(element[0], Number):
         return element
-    else:
-        assert (
-            False
-        ), f"flatten_elements has not been implemented for {type(element)} but is listed as an accepetable_type to a decorator."
+
+    assert False, (
+        f"flatten_elements has not been implemented for {type(element)}"
+        "but is listed as an accepetable_type to a decorator."
+    )
 
 
 def flatten(
@@ -53,7 +54,7 @@ def flatten(
     return numbers
 
 
-def primative(gl_function: int, acceptable_type: type) -> Callable:
+def primitive(gl_function: int, acceptable_type: type) -> Callable:
     def array_wrapper(array_size: int) -> Callable:
         def wrapper(location: int, values: Iterable) -> None:
             if isinstance(values, acceptable_type):

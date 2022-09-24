@@ -1,16 +1,30 @@
 import logging
+from typing import Any
 import os
 from typing import Iterable
 
-from OpenGL.GL import *
+import OpenGL.GL as gl
 
-from ..frozen_dict import FrozenDict
 from ..utils import raise_if
 from .shader import Shader, ShaderType
 from .uniform import Uniform
 from .uniform_buffer import UniformBuffer
 
 logger = logging.getLogger(__name__)
+
+
+class FrozenDict:
+    """Dictionary that does not allow keys to be added to after initialization."""
+
+    def __init__(self, d: dict) -> None:
+        for key, value in d.items():
+            self.__dict__[key] = value
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        if hasattr(self, name):
+            self.__dict__[name] = value
+        else:
+            raise AttributeError
 
 
 class UniformDict:
@@ -23,7 +37,7 @@ class UniformDict:
     def from_program(cls, program_id: int) -> "UniformDict":
         uniforms = {}
 
-        num_uniforms = glGetProgramInterfaceiv(program_id, GL_UNIFORM, GL_ACTIVE_RESOURCES)
+        num_uniforms = gl.glGetProgramInterfaceiv(program_id, gl.GL_UNIFORM, gl.GL_ACTIVE_RESOURCES)
 
         for uniform_index in range(num_uniforms):
             uniform = Uniform.from_program_index(program_id, uniform_index)
@@ -43,7 +57,9 @@ class UniformDict:
             if name not in self._already_logged:
                 self._already_logged.append(name)
                 logger.warning(
-                    f"Setting uniform `{name}` that does not exist in program {self.program_id}"
+                    "Setting uniform '%s' that does not exist in program '%s'",
+                    name,
+                    self.program_id,
                 )
 
 
@@ -52,15 +68,15 @@ class ShaderProgram:
     DEFAULT_EXTENSION = ".glsl"
 
     def __init__(self, name, shaders: Iterable[Shader]) -> None:
-        self.id = glCreateProgram()
+        self.id = gl.glCreateProgram()
 
         #  Used for warning/error messaging
         self.name = name
 
-        logger.debug(f"Shader program `{self.name}` assigned ID {self.id}")
+        logger.debug("Shader program '%s' assigned ID %s", self.name, self.id)
 
         for shader in shaders:
-            glAttachShader(self.id, shader.id)
+            gl.glAttachShader(self.id, shader.id)
 
         self.link()
 
@@ -100,34 +116,34 @@ class ShaderProgram:
         return cls(shader_name, shaders)
 
     def __del__(self):
-        glDeleteProgram(self.id)
+        gl.glDeleteProgram(self.id)
 
     def __enter__(self) -> "ShaderProgram":
-        glUseProgram(self.id)
+        gl.glUseProgram(self.id)
         return self
 
     def __exit__(self, exc_type, exc_value, exc_traceback) -> None:
-        glUseProgram(0)
+        gl.glUseProgram(0)
 
     def link(self):
-        glLinkProgram(self.id)
+        gl.glLinkProgram(self.id)
 
-        if glGetProgramiv(self.id, GL_LINK_STATUS) != GL_TRUE:
-            msg = glGetProgramInfoLog(self.id).decode("unicode_escape")
+        if gl.glGetProgramiv(self.id, gl.GL_LINK_STATUS) != gl.GL_TRUE:
+            msg = gl.glGetProgramInfoLog(self.id).decode("unicode_escape")
             raise RuntimeError(f"Error linking program: {msg}")
 
     def bind_ubo(self, ubo: UniformBuffer) -> None:
-        """Set the ShaderProgram's uniform block to the binding index provided by the Uniform Buffer.
+        """Set the program's uniform block to the binding index provided by the Uniform Buffer.
 
         If the ShaderProgram doesn't use the UniformBuffer, just ignore it.
         """
-        block_index = glGetUniformBlockIndex(self.id, ubo.name)
+        block_index = gl.glGetUniformBlockIndex(self.id, ubo.name)
 
-        if block_index != GL_INVALID_INDEX:
-            glUniformBlockBinding(self.id, block_index, ubo.binding_index)
+        if block_index != gl.GL_INVALID_INDEX:
+            gl.glUniformBlockBinding(self.id, block_index, ubo.binding_index)
 
     def attribute_location(self, name: str) -> int:
-        result = glGetAttribLocation(self.id, name)
+        result = gl.glGetAttribLocation(self.id, name)
 
         raise_if(result == -1, AttributeError)
 
