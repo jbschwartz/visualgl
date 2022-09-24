@@ -3,6 +3,7 @@ from unittest.mock import Mock
 
 import pytest
 from pytest_mock import MockerFixture
+from spatial3d import Vector3
 
 from visualgl.window import Grid, Viewport
 from visualgl.window.exceptions import LayoutError
@@ -121,12 +122,12 @@ def test_grid_reflow_reflows_all_viewports(grid: Callable) -> None:
     Test that the pixel sizes passed to the reflow function are correct and they are applied to the
     proper viewport order.
     """
-    test_grid = grid(2, 2)
-    test_grid.resize(100, 200)
+    test_grid: Grid = grid(2, 2)
+    test_grid.resize(Vector3(100, 200))
 
     assert all(viewport.reflow.call_count == 1 for viewport in test_grid)
 
-    assert test_grid.viewports[0].reflow.call_args.args == ((0, 0), (50, 100))
-    assert test_grid.viewports[1].reflow.call_args.args == ((50, 0), (50, 100))
-    assert test_grid.viewports[2].reflow.call_args.args == ((0, 100), (50, 100))
-    assert test_grid.viewports[3].reflow.call_args.args == ((50, 100), (50, 100))
+    assert test_grid.viewports[0].reflow.call_args.args == (Vector3(0, 0), Vector3(50, 100))
+    assert test_grid.viewports[1].reflow.call_args.args == (Vector3(50, 0), Vector3(50, 100))
+    assert test_grid.viewports[2].reflow.call_args.args == (Vector3(0, 100), Vector3(50, 100))
+    assert test_grid.viewports[3].reflow.call_args.args == (Vector3(50, 100), Vector3(50, 100))
