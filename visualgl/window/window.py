@@ -5,10 +5,8 @@ from typing import List, Optional
 import glfw
 from spatial3d import Vector3
 
-from visualgl.messaging.emitter import emitter
-from visualgl.messaging.event import Event
 from visualgl.settings import settings
-from visualgl.timer import Timer
+from visualgl.utils import glfw_detail_error
 
 from .exceptions import WindowError
 from .input_event import InputEvent, InputEventType
@@ -17,16 +15,10 @@ from .layouts.grid import Grid
 from .viewport import Viewport
 
 
-# Pylint cannot resolve the `emit` method since it is provided by the `emitter` decorator.
-# pylint: disable=no-member
-@emitter
 class Window:
     """A GUI window and OpenGL context."""
 
     def __init__(self, title: str, **kwargs):
-        if not glfw.init():
-            raise WindowError(self._detail_error("GLFW initialization failed"))
-
         self._window_hints()
         self.glfw_window = self._create_window(title, kwargs.get("width"), kwargs.get("height"))
 
@@ -52,6 +44,7 @@ class Window:
         This function constructs the Layout object.
         """
         self.layout = self._layout_type(viewports, *self._layout_arguments)
+        self.layout.resize(self.size)
 
     def event(self, event: InputEvent) -> None:
         """Respond to the provided input event.
@@ -73,32 +66,6 @@ class Window:
         else:
             self.layout.event(event)
 
-    def run(self, fps_limit: Optional[int] = None) -> None:
-        """Run the main event loop.
-
-        If `fps_limit` is provided, the loop will execute no faster than the provide value.
-        """
-        self.layout.resize(self.size)
-
-        period = (1 / fps_limit) if fps_limit else 0
-
-        update = Timer()
-        frame = Timer(period=period)
-
-        self.emit(Event.START_RENDERER)
-
-        while not glfw.window_should_close(self.glfw_window):
-            with update:
-                self.emit(Event.UPDATE, delta=update.time_since_last)
-
-            with frame:
-                if frame.ready:
-                    self.emit(Event.START_FRAME)
-                    self.emit(Event.DRAW)
-
-            glfw.swap_buffers(self.glfw_window)
-            glfw.poll_events()
-
     def _create_window(self, title: str, width: Optional[int] = None, height: Optional[int] = None):
         """Create the window with the provided settings using GLFW."""
         # Try to use the _settings values if they exist. Otherwise rely on defaults.
@@ -109,7 +76,7 @@ class Window:
 
         if not window:
             glfw.terminate()
-            raise WindowError(self._detail_error("GLFW create window failed"))
+            raise WindowError(glfw_detail_error("GLFW create window failed"))
 
         # Set the position of the window from the _settings session.
         if "position" in settings.window:
@@ -119,20 +86,6 @@ class Window:
         glfw.swap_interval(0)
 
         return window
-
-    def _detail_error(self, message: str) -> str:
-        """Return a detailed error message if possible. Otherwise return the provided `message`."""
-        code, description = glfw.get_error()
-
-        error_string = message
-
-        if description is not None:
-            error_string += f": {description}"
-
-        if code != 0:
-            error_string += f" (code {code})"
-
-        return error_string
 
     def _update_settings(self) -> None:
         """Update and write the window settings.
