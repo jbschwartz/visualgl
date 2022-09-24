@@ -1,6 +1,6 @@
 import logging
 from collections import namedtuple
-from typing import Callable, Iterable
+from typing import Callable, Iterable, Optional
 
 import OpenGL.GL as gl
 
@@ -9,19 +9,20 @@ from .opengl.shader import ShaderType
 from .opengl.shader_program import ShaderProgram
 from .opengl.uniform_buffer import Mapping, UniformBuffer
 
-Entity = namedtuple("Entity", "name shader draw_mode buffer instances per_instance add_children")
+Entity = namedtuple("Entity", "shader draw_mode buffer instances per_instance add_children")
 
 logger = logging.getLogger(__name__)
 
 
 class Renderer:
-    def __init__(self, window):
-        self.window = window
-        self.entities = {}
+    def __init__(self, **kwargs):
+        self.entities = []
         self.shaders = {}
-        self.ubos = [UniformBuffer("Matrices", 1), UniformBuffer("Light", 2)]
+        self.ubos = []
+        self.shader_directory: Optional[str] = kwargs.get("shader_dir", None)
 
     def start(self) -> None:
+        self.ubos = [UniformBuffer("Matrices", 1), UniformBuffer("Light", 2)]
         self.configure_opengl()
         self.bind_buffer_objects()
         self.load_buffers()
@@ -43,9 +44,9 @@ class Renderer:
                 shader.bind_ubo(ubo)
 
     def load_buffers(self):
-        for entity in self.entities.values():
+        for entity in self.entities:
             if len(entity.instances) == 0:
-                logger.warning("Entity `%s` has no instances", entity.name)
+                logger.warning("Entity has no instances")
 
             if not entity.buffer.is_procedural:
                 entity.buffer.set_attribute_locations(entity.shader)
@@ -72,7 +73,7 @@ class Renderer:
 
                 self.load_buffer_objects()
 
-                for entity in self.entities.values():
+                for entity in self.entities:
                     with entity.shader as shader:
                         with entity.buffer as buffer:
                             for instance, kwargs in entity.instances:
@@ -106,7 +107,6 @@ class Renderer:
 
     def register_entity_type(
         self,
-        name: str,
         buffer: Buffer,
         per_instance: Callable,
         add_children: Callable = None,
@@ -114,21 +114,13 @@ class Renderer:
         shader_dir: str = None,
         draw_mode: int = None,
     ) -> None:
-        if self.entities.get(name, None) is not None:
-            logger.warning("Entity type `%s` already registered. Keeping original values", name)
-            return
-
-        # If shader name is not provided, assume it is the same name as the entity
-        shader_name = shader_name or name
-
         try:
-            self.initialize_shader(shader_name, shader_dir)
+            self.initialize_shader(shader_name, shader_dir or self.shader_directory)
         except FileNotFoundError:
-            logger.error("Entity type `%s` creation failed", name)
+            logger.error("Entity type `%s` creation failed")
             return
 
-        self.entities[name] = Entity(
-            name=name,
+        entity = Entity(
             shader=self.shaders.get(shader_name),
             draw_mode=draw_mode or gl.GL_TRIANGLES,
             buffer=buffer,
@@ -136,17 +128,17 @@ class Renderer:
             per_instance=per_instance,
             add_children=add_children,
         )
+        self.entities.append(entity)
 
-    def add(self, entity_type: str, instance, parent=None, **kwargs) -> None:
-        entity = self.entities.get(entity_type, None)
-        if entity is None:
-            logger.error("No entity type `%s` found when adding entity", entity_type)
-            return
+        def add(instance, **kwargs):
+            entity.instances.append((instance, kwargs))
 
-        entity.instances.append((instance, kwargs))
+            if entity.add_children is not None:
+                entity.add_children(self, instance)
 
-        if entity.add_children is not None:
-            entity.add_children(self, instance)
+            return instance
+
+        return add
 
     def add_many(self, entity_type: str, instances: Iterable, parent=None, **kwargs) -> None:
         if entity_type not in self.entities:
