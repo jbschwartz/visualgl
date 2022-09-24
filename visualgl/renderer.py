@@ -4,8 +4,6 @@ from typing import Callable, Iterable
 
 import OpenGL.GL as gl
 
-from .messaging.event import Event
-from .messaging.listener import listen, listener
 from .opengl.buffer import Buffer
 from .opengl.shader import ShaderType
 from .opengl.shader_program import ShaderProgram
@@ -16,7 +14,6 @@ Entity = namedtuple("Entity", "name shader draw_mode buffer instances per_instan
 logger = logging.getLogger(__name__)
 
 
-@listener
 class Renderer:
     def __init__(self, window):
         self.window = window
@@ -24,7 +21,6 @@ class Renderer:
         self.shaders = {}
         self.ubos = [UniformBuffer("Matrices", 1), UniformBuffer("Light", 2)]
 
-    @listen(Event.START_RENDERER)
     def start(self) -> None:
         self.configure_opengl()
         self.bind_buffer_objects()
@@ -55,7 +51,6 @@ class Renderer:
                 entity.buffer.set_attribute_locations(entity.shader)
                 entity.buffer.load()
 
-    @listen(Event.START_FRAME)
     def frame(self):
         # pylint: disable=unsupported-binary-operation
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
@@ -66,9 +61,8 @@ class Renderer:
         for ubo in self.ubos:
             ubo.load()
 
-    @listen(Event.DRAW)
-    def draw(self):
-        for viewport in self.window.layout:
+    def draw(self, window):
+        for viewport in window.layout:
             with viewport:
                 self.ubos[0].bind(
                     Mapping(viewport.camera.camera, ["projection.matrix", "world_to_camera"])

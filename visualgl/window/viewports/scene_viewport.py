@@ -1,15 +1,12 @@
 from spatial3d import Vector3
 
 from visualgl.camera import CameraController
-from visualgl.messaging.event import Event
-from visualgl.messaging.listener import listen, listener
 from visualgl.scene import Scene
 
 from ..input_event import InputEvent, InputEventType
 from ..viewport import Viewport
 
 
-@listener
 class SceneViewport(Viewport):
     """A viewport for displaying a scene (collection of object) with a controllable camera."""
 
@@ -33,10 +30,12 @@ class SceneViewport(Viewport):
         """Update the camera's aspect ratio when the viewport changes size."""
         self.camera.update_output_size(self.size)
 
-    @listen(Event.START_RENDERER)
     def on_start(self) -> None:
         """Set up the scene and camera when the viewport is first set to render."""
         self._initialize_camera()
+
+    def on_update(self, delta: float) -> None:
+        self.scene.update(delta)
 
     def _initialize_camera(self) -> None:
         if len(self.scene.entities) > 0:

@@ -58,6 +58,13 @@ class Viewport(abc.ABC):
         Called by the parent layout when the size of the layout changes.
         """
 
+    @abc.abstractmethod
+    def on_update(self, delta: float) -> None:
+        """Process an update.
+
+        Called by the main application loop to advance the application.
+        """
+
     def event(self, event: InputEvent) -> None:
         """Respond to the provided input event.
 
@@ -73,6 +80,12 @@ class Viewport(abc.ABC):
             event.cursor_position = cursor_ndc
 
         self.on_event(event)
+
+    def on_start(self) -> None:
+        """Process the reflow (change in position and size) of the viewport.
+
+        Called by the parent layout when the size of the layout changes.
+        """
 
     def reflow(self, position: Vector3, size: Vector3) -> None:
         """Update the position and size of the viewport.
