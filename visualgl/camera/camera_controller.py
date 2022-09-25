@@ -209,7 +209,7 @@ class CameraController:
         delta = self.camera.camera_space(cursor_delta)
 
         if isinstance(self.camera.projection, PerspectiveProjection):
-            delta *= -self.camera.world_to_camera(self.camera.target).z
+            delta *= -self.camera.world_to_camera(self.target).z
 
         self.camera.track(vector=-delta)
 
