@@ -134,10 +134,15 @@ class InputHandler:
     @_glfw_callback
     def _scroll(self, glfw_window, x_direction: float, y_direction: float) -> None:
         """Emit the scroll event for both scroll directions."""
+        assert x_direction != 0 or y_direction != 0, "Malformed scroll event encountered."
+
         # The scroll amounts are normalized by only passing on their direction.
         self._emit(
             InputEvent.Scroll(
-                sign(x_direction), sign(y_direction), glfw.get_cursor_pos(glfw_window)
+                sign(x_direction),
+                sign(y_direction),
+                glfw.get_cursor_pos(glfw_window),
+                self.current_key_modifiers,
             )
         )
 

@@ -40,10 +40,20 @@ class CameraController:
             self.roll(event.cursor_position, event.cursor_delta, parameter)
 
         elif command == "scale":
-            self.scale(event.cursor_delta, parameter)
+            if getattr(event.scroll, "y", None) is not None:
+                self.scale_to_cursor(
+                    event.cursor_position, event.scroll.y * settings.camera.scale_in
+                )
+            else:
+                self.scale(event.cursor_delta, parameter)
 
         elif command == "orbit":
-            self.orbit(event.cursor_delta, parameter)
+            if getattr(event.scroll, "x", None) is not None:
+                self.camera.orbit(
+                    self.target, 0, settings.camera.orbit_step * event.scroll.x, self.orbit_type
+                )
+            else:
+                self.orbit(event.cursor_delta, parameter)
 
         elif command == "fit":
             self.camera.fit(self.scene.aabb)
@@ -61,14 +71,6 @@ class CameraController:
 
         elif command == "view":
             self.view(parameter)
-
-    def scroll(self, event) -> None:
-        if event.scroll.x:
-            self.camera.orbit(
-                self.target, 0, settings.camera.orbit_step * event.scroll.x, self.orbit_type
-            )
-        if event.scroll.y:
-            self.scale_to_cursor(event.cursor_position, event.scroll.y * settings.camera.scale_in)
 
     def update_output_size(self, size: Vector3) -> None:
         """Update the output size of the camera."""

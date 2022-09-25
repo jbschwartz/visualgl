@@ -18,13 +18,10 @@ class SceneViewport(Viewport):
 
     def on_event(self, event: InputEvent) -> None:
         """Pass the event onto the Camera."""
-        if event.event_type in [InputEventType.DRAG, InputEventType.KEY]:
-            if event.command and event.command[0] == "camera":
-                self.camera.command(event)
-        elif event.event_type is InputEventType.CLICK:
+        if event.event_type is InputEventType.CLICK:
             self._update_camera_target(event.cursor_position)
-        elif event.event_type is InputEventType.SCROLL:
-            self.camera.scroll(event)
+        elif event.command and event.command[0] == "camera":
+            self.camera.command(event)
 
     def on_reflow(self, _position: Vector3, _size: Vector3) -> None:
         """Update the camera's aspect ratio when the viewport changes size."""

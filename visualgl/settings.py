@@ -173,7 +173,7 @@ settings = Settings(
             **{
                 "camera.fit": "f",
                 "camera.normal_to": "v",
-                "camera.orbit": "button_middle",
+                "camera.orbit": "button_middle, scroll_horizontal",
                 "camera.orbit.down": "down",
                 "camera.orbit.left": "left",
                 "camera.orbit.right": "right",
@@ -183,7 +183,7 @@ settings = Settings(
                 "camera.roll": "alt+button_middle",
                 "camera.roll.cw": "alt+right",
                 "camera.roll.ccw": "alt+left",
-                "camera.scale": "shift+button_middle",
+                "camera.scale": "shift+button_middle, scroll_vertical",
                 "camera.scale.in": "z",
                 "camera.scale.out": "shift+z",
                 "camera.track": "ctrl+button_middle",

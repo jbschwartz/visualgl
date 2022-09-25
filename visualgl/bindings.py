@@ -1,15 +1,31 @@
+import enum
 import logging
 from typing import Dict, List, Optional, Tuple
 
 import glfw
 
-from visualgl.window.input_event import InputEvent
+from visualgl.window.input_event import InputEvent, InputEventType
 
 from .exceptions import SettingsError
 
 logger = logging.getLogger(__name__)
 
 BindingsType = Dict[Tuple[int, int], str]
+
+
+@enum.unique
+class _ScrollType(enum.IntEnum):
+    """Integer constants for scroll input.
+
+    GLFW does not provide integer constants for scrolling (since it is more of an action than a
+    physical button or key). This enum is provided so that scrolling can be included in command
+    bindings (e.g., settings.bindings = {"camera.scale": "z, scroll_vertical"})
+    """
+
+    # Use glfw.KEY_LAST to ensure there are no collisions between these constants and the ones used
+    # by GLFW.
+    VERTICAL = glfw.KEY_LAST + 1
+    HORIZONTAL = glfw.KEY_LAST + 2
 
 
 # pylint: disable=too-few-public-methods
@@ -25,7 +41,11 @@ class Bindings:
 
     def command(self, event: InputEvent) -> Optional[str]:
         """Return the command that matches the given input event. Return None for no match."""
-        _input = event.button if event.button is not None else event.key
+        # Input can come in the form of a key press, mouse button press, or scroll.
+        if event.event_type is InputEventType.SCROLL:
+            _input = int(_ScrollType.HORIZONTAL if event.scroll.x != 0 else _ScrollType.VERTICAL)
+        else:
+            _input = event.button if event.button is not None else event.key
 
         if _input is None:
             return None
@@ -45,12 +65,22 @@ class Bindings:
 
     def _parse_input(self, string: str) -> int:
         """Parse the input string and return the corresponding GLFW constant."""
+        assert (
+            string.isdigit() or string.isupper()
+        ), f"The input string '{string}' must already be uppercase."
 
         # GLFW prefixes all constants with "KEY" or "MOUSE".
         for prefix in ["KEY", "MOUSE"]:
             attribute_name = prefix + "_" + string
             if hasattr(glfw, attribute_name):
                 return getattr(glfw, attribute_name)
+
+        if string.startswith("SCROLL_"):
+            try:
+                return int(_ScrollType[string.replace("SCROLL_", "")])
+            except KeyError:
+                # Allow the exception at the end to catchall unknown inputs.
+                pass
 
         raise SettingsError(f"Unknown input '{string.lower()}'")
 

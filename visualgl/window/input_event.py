@@ -84,11 +84,12 @@ class InputEvent:
 
     @classmethod
     def Scroll(
-        cls, x_direction: int, y_direction: int, cursor_position: Tuple[int, int]
+        cls, x_direction: int, y_direction: int, cursor_position: Tuple[int, int], modifiers: int
     ) -> "InputEvent":
         """Create a Scroll type InputEvent."""
         return cls(
             InputEventType.SCROLL,
             cursor_position=Vector3(*cursor_position),
             scroll=Vector3(x_direction, y_direction),
+            modifiers=modifiers,
         )
