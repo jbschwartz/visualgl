@@ -72,26 +72,38 @@ class Bindings:
         return (modifiers, key_or_button)
 
     def _translate_bindings(self, bindings: Dict[str, str]) -> BindingsType:
+        """Return a dictionary of bindings from the string settings dictionary."""
         dictionary = {}
-        for command, keys in bindings.items():
-            try:
-                dictionary_key = self._get_glfw_constants(keys)
-            except SettingsError as e:
-                logger.warning("Ignoring binding for %s: %s", command, str(e))
 
-            # Issue a warning if the dictionary entry is about to be overwritten.
-            if dictionary_key in dictionary:
-                logger.warning(
-                    "'%s' assigned to two commands: '%s' and '%s'. Assigning '%s' to '%s'",
-                    keys,
-                    dictionary[dictionary_key],
-                    command,
-                    keys,
-                    command,
-                )
+        # The settings dictionary contains string-string dictionary elements. The key represents the
+        # command to be called. The value is a comma separated list of key and mouse presses
+        # ("input groups") which are to be bound to the command.
+        #
+        # For example:
+        #     {"camera.fit": "f,shift+b"}
+        # Binds both the "f" key and "shift" and "b" keys to the "camera.fit" command.
 
-            dictionary[dictionary_key] = command.split(".")
+        for command, input_groups in bindings.items():
+            for input_group in input_groups.split(","):
+                try:
+                    dictionary_key = self._get_glfw_constants(input_group)
+                except SettingsError as e:
+                    logger.warning("Ignoring binding for '%s': %s", command, str(e))
+                    continue
 
-            logger.debug("Binding '%s' to '%s'", dictionary_key, command)
+                # Issue a warning if the dictionary entry is about to be overwritten.
+                if dictionary_key in dictionary:
+                    logger.warning(
+                        "'%s' assigned to two commands: '%s' and '%s'. Assigning '%s' to '%s'",
+                        input_group,
+                        dictionary[dictionary_key],
+                        command,
+                        input_group,
+                        command,
+                    )
+
+                dictionary[dictionary_key] = command.split(".")
+
+                logger.debug("Binding '%s' to '%s'", dictionary_key, command)
 
         return dictionary
