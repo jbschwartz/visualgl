@@ -6,6 +6,10 @@ class SettingsError(VisualError):
     """Raised when a setting is invalid."""
 
 
+class ControllerError(VisualError):
+    """Raised when an error occurs when attempting to handle a command on a controller."""
+
+
 class ParserError(VisualError):
     def __init__(self, line, msg):
         self.line = line
