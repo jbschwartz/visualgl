@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import glfw
 
@@ -25,51 +25,55 @@ class Bindings:
 
     def command(self, event: InputEvent) -> Optional[str]:
         """Return the command that matches the given input event. Return None for no match."""
-        if event.key is None:
-            if event.button is None:
-                return None
+        _input = event.button if event.button is not None else event.key
 
-            key_or_button = event.button
-        else:
-            key_or_button = event.key
+        if _input is None:
+            return None
 
-        return self._bindings.get((event.modifiers, key_or_button))
+        return self._bindings.get((event.modifiers, _input))
 
-    def _get_glfw_constants(self, keys: str) -> Tuple[int, int]:
+    def _get_glfw_constants(self, input_group: str) -> Tuple[int, int]:
         """Translate the settings string into the appropriate GLFW constants.
 
         For example, 'button_middle' becomes `glfw.MOUSE_BUTTON_MIDDLE` and 'control' becomes
         `glfw.MOD_CONTROL`.
         """
-        # There can be several modifiers but only one key or button.
-        *modifier_strings, key_or_button_string = keys.upper().replace(" ", "").split("+")
+        # There can be several modifiers but only one input key or mouse button.
+        *modifier_strings, input_string = input_group.upper().replace(" ", "").split("+")
 
-        modifiers = 0
+        return (self._parse_modifiers(modifier_strings), self._parse_input(input_string))
+
+    def _parse_input(self, string: str) -> int:
+        """Parse the input string and return the corresponding GLFW constant."""
+
+        # GLFW prefixes all constants with "KEY" or "MOUSE".
+        for prefix in ["KEY", "MOUSE"]:
+            attribute_name = prefix + "_" + string
+            if hasattr(glfw, attribute_name):
+                return getattr(glfw, attribute_name)
+
+        raise SettingsError(f"Unknown input '{string.lower()}'")
+
+    def _parse_modifiers(self, strings: List[str]) -> int:
+        """Parse the input strings for modifiers and return the integer bit field."""
+        bit_field = 0
+
         # Process modifiers one by one, ORing their integer value onto the running total.
-        if len(modifier_strings) > 0:
-            for modifier in modifier_strings:
-                # Allow settings to use "ctrl" as an abbreviation for "control".
-                if modifier == "CTRL":
-                    modifier = "CONTROL"
+        for modifier in strings:
+            assert modifier.isupper(), f"The modifier string '{modifier}' must already be uppercase"
 
-                try:
-                    modifier = getattr(glfw, f"MOD_{modifier}")
-                except AttributeError as e:
-                    raise SettingsError(f"Unknown modifier key '{modifier.lower()}'") from e
+            # Allow settings to use "ctrl" as an abbreviation for "control".
+            if modifier == "CTRL":
+                modifier = "CONTROL"
 
-                modifiers |= modifier
-
-        try:
-            key_or_button = getattr(glfw, f"KEY_{key_or_button_string}")
-        except AttributeError:
             try:
-                key_or_button = getattr(glfw, f"MOUSE_{key_or_button_string}")
+                integer = getattr(glfw, f"MOD_{modifier}")
             except AttributeError as e:
-                raise SettingsError(
-                    f"Unknown button or key '{key_or_button_string.lower()}'"
-                ) from e
+                raise SettingsError(f"Unknown modifier key '{modifier.lower()}'") from e
 
-        return (modifiers, key_or_button)
+            bit_field |= integer
+
+        return bit_field
 
     def _translate_bindings(self, bindings: Dict[str, str]) -> BindingsType:
         """Return a dictionary of bindings from the string settings dictionary."""
