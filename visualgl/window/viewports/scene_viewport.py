@@ -20,7 +20,7 @@ class SceneViewport(Viewport):
         """Pass the event onto the Camera."""
         if event.event_type is InputEventType.CLICK:
             self._update_camera_target(event.cursor_position)
-        elif event.command and event.command[0] == "camera":
+        elif event.command and event.command.controller == "camera":
             self.camera.command(event)
 
     def on_reflow(self, _position: Vector3, _size: Vector3) -> None:

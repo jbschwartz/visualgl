@@ -1,3 +1,4 @@
+import dataclasses
 import enum
 import logging
 from typing import Dict, List, Optional, Tuple
@@ -10,7 +11,22 @@ from .exceptions import SettingsError
 
 logger = logging.getLogger(__name__)
 
-BindingsType = Dict[Tuple[int, int], str]
+
+@dataclasses.dataclass
+class CommandRoute:
+    """The route which a command binding will take on execution.
+
+    That is, which controller and its method should handle the binding with the given parameter
+    when it occurs. Parameters are optional. For example, `CommandRoute("camera", "orbit", "up")`
+    represents the `CameraController.orbit` function call.
+    """
+
+    controller: str
+    method: str
+    parameter: Optional[str] = None
+
+
+BindingsType = Dict[Tuple[int, int], CommandRoute]
 
 
 @enum.unique
@@ -39,8 +55,8 @@ class Bindings:
     def __init__(self, bindings: Dict[str, str]):
         self._bindings: BindingsType = self._translate_bindings(bindings)
 
-    def command(self, event: InputEvent) -> Optional[str]:
-        """Return the command that matches the given input event. Return None for no match."""
+    def command(self, event: InputEvent) -> Optional[CommandRoute]:
+        """Return the matching command route for the given input event. Return None for no match."""
         # Input can come in the form of a key press, mouse button press, or scroll.
         if event.event_type is InputEventType.SCROLL:
             _input = int(_ScrollType.HORIZONTAL if event.scroll.x != 0 else _ScrollType.VERTICAL)
@@ -118,6 +134,7 @@ class Bindings:
         # Binds both the "f" key and "shift" and "b" keys to the "camera.fit" command.
 
         for command, input_groups in bindings.items():
+            route = CommandRoute(*command.lower().split("."))
             for input_group in input_groups.split(","):
                 try:
                     dictionary_key = self._get_glfw_constants(input_group)
@@ -136,7 +153,7 @@ class Bindings:
                         command,
                     )
 
-                dictionary[dictionary_key] = command.split(".")
+                dictionary[dictionary_key] = route
 
                 logger.debug("Binding '%s' to '%s'", dictionary_key, command)
 
