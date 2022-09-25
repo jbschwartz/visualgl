@@ -2,14 +2,16 @@ import math
 
 from spatial3d import Transform, vector3
 
-from ..settings import settings
+from visualgl import controller
+from visualgl.settings import settings
+
 from .camera import Camera, OrbitType
 from .projection import OrthoProjection, PerspectiveProjection
 
 Vector3 = vector3.Vector3
 
 
-class CameraController:
+class CameraController(controller.Controller):
     VIEWS = {
         "top": {"position": Vector3(0, 0, 1250), "up": Vector3(0, 1, 0)},
         "bottom": {"position": Vector3(0, 0, -1250), "up": Vector3(0, -1, 0)},
@@ -30,67 +32,41 @@ class CameraController:
     def cast_ray(self, cursor_position):
         return self.camera.cast_ray(cursor_position)
 
-    def command(self, event):
-        _module, command, parameter, *_ = event.command + [None]
+    @controller.command
+    def fit(self) -> None:
+        self.camera.fit(self.scene.aabb)
 
-        if command == "track":
-            self.track(event.cursor_delta, parameter)
-
-        elif command == "roll":
-            self.roll(event.cursor_position, event.cursor_delta, parameter)
-
-        elif command == "scale":
-            if getattr(event.scroll, "y", None) is not None:
-                self.scale_to_cursor(
-                    event.cursor_position, event.scroll.y * settings.camera.scale_in
-                )
-            else:
-                self.scale(event.cursor_delta, parameter)
-
-        elif command == "orbit":
-            if getattr(event.scroll, "x", None) is not None:
-                self.camera.orbit(
-                    self.target, 0, settings.camera.orbit_step * event.scroll.x, self.orbit_type
-                )
-            else:
-                self.orbit(event.cursor_delta, parameter)
-
-        elif command == "fit":
-            self.camera.fit(self.scene.aabb)
-
-        elif command == "orbit_toggle":
-            self.orbit_type = (
-                OrbitType.FREE
-                if self.orbit_type is OrbitType.CONSTRAINED
-                else OrbitType.CONSTRAINED
-            )
-        elif command == "projection_toggle":
-            self.toggle_projection()
-        elif command == "normal_to":
-            self.normal_to()
-
-        elif command == "view":
-            self.view(parameter)
+    @controller.command
+    def orbit_toggle(self) -> None:
+        self.orbit_type = (
+            OrbitType.FREE if self.orbit_type is OrbitType.CONSTRAINED else OrbitType.CONSTRAINED
+        )
 
     def update_output_size(self, size: Vector3) -> None:
         """Update the output size of the camera."""
         assert size.x > 0 and size.y > 0, "Camera output size must be greater than zero."
         self.camera.projection.resize(*size.xy)
 
-    def orbit(self, cursor_delta, direction: str) -> None:
+    @controller.command
+    def orbit(self, cursor_delta, scroll, direction: str) -> None:
+        pitch, yaw = (0, 0)
         if direction == "left":
-            self.camera.orbit(self.target, 0, -settings.camera.orbit_step, self.orbit_type)
+            yaw = -settings.camera.orbit_step
         elif direction == "right":
-            self.camera.orbit(self.target, 0, settings.camera.orbit_step, self.orbit_type)
+            yaw = settings.camera.orbit_step
         elif direction == "up":
-            self.camera.orbit(self.target, -settings.camera.orbit_step, 0, self.orbit_type)
+            pitch = -settings.camera.orbit_step
         elif direction == "down":
-            self.camera.orbit(self.target, settings.camera.orbit_step, 0, self.orbit_type)
+            pitch = settings.camera.orbit_step
+        elif scroll:
+            yaw = settings.camera.orbit_step * scroll.x
         else:
             cursor_delta.x = -cursor_delta.x
-            angle = settings.camera.orbit_speed * cursor_delta
-            self.camera.orbit(self.target, angle.y, angle.x, self.orbit_type)
+            yaw, pitch = (settings.camera.orbit_speed * cursor_delta).xy
 
+        self.camera.orbit(self.target, pitch, yaw, self.orbit_type)
+
+    @controller.command
     def normal_to(self) -> None:
         minimum = math.radians(180)
         direction = Vector3()
@@ -133,7 +109,8 @@ class CameraController:
             * self.camera.camera_to_world
         )
 
-    def toggle_projection(self):
+    @controller.command
+    def projection_toggle(self):
         """
         Switch the camera projection while maintaining "scale".
 
@@ -189,6 +166,7 @@ class CameraController:
 
         return False
 
+    @controller.command
     def track(self, cursor_delta: Vector3, direction: str) -> None:
         """Move the camera the same amount that the cursor moved.
 
@@ -225,11 +203,12 @@ class CameraController:
         if isinstance(self.camera.projection, OrthoProjection):
             delta_camera /= self.camera.projection.width
 
-        was_scaled = self.scale(Vector3(0, delta_scale), None)
+        was_scaled = self.scale(None, Vector3(0, delta_scale), None, None)
 
         if was_scaled:
             self.camera.track(delta_camera.x, delta_camera.y)
 
+    @controller.command
     def roll(self, cursor: Vector3, cursor_delta: Vector3, direction: str) -> float:
         if direction == "cw":
             self.camera.roll(-settings.camera.roll_step)
@@ -249,11 +228,15 @@ class CameraController:
             angle = settings.camera.roll_speed * cursor_delta * tangent
             self.camera.roll(angle)
 
-    def scale(self, cursor_delta, direction: str) -> bool:
+    @controller.command
+    def scale(self, cursor_position, cursor_delta, scroll, direction: str) -> bool:
         """Attempt to scale the scene by the given amount. Return True if the scale is successful.
 
         Scaling is successful if it does not cause clipping in the scene.
         """
+        if scroll:
+            self.scale_to_cursor(cursor_position, scroll.y * settings.camera.scale_in)
+            return False
 
         if direction == "in":
             amount = -settings.camera.scale_step
@@ -272,6 +255,7 @@ class CameraController:
 
         return True
 
+    @controller.command
     def view(self, view_name: str) -> None:
         view = self.VIEWS[view_name]
 
