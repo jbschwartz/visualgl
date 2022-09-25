@@ -1,6 +1,7 @@
+import logging
 import weakref
 from functools import cached_property
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 import glfw
 from spatial3d import Vector3
@@ -14,13 +15,23 @@ from .layout import Layout
 from .layouts.grid import Grid
 from .viewport import Viewport
 
+logger = logging.getLogger(__name__)
+
 
 class Window:
     """A GUI window and OpenGL context."""
 
+    # The fallback height of the window in pixels when no valid settings value is available.
+    DEFAULT_HEIGHT = 1000
+
+    # The fallback width of the window in pixels when no valid settings value is available.
+    DEFAULT_WIDTH = 1000
+
     def __init__(self, title: str, **kwargs):
         self._window_hints()
-        self.glfw_window = self._create_window(title, kwargs.get("width"), kwargs.get("height"))
+
+        width, height = self._window_size(kwargs.get("width"), kwargs.get("height"))
+        self.glfw_window = self._create_window(title, width, height)
 
         # Get the layout type used (and any arguments for its creation) in a tuple. Default to a
         # one cell grid if nothing is provided. Note that the layout is not created until the
@@ -66,26 +77,41 @@ class Window:
         else:
             self.layout.event(event)
 
-    def _create_window(self, title: str, width: Optional[int] = None, height: Optional[int] = None):
+    def _create_window(self, title: str, width: int, height: int) -> None:
         """Create the window with the provided settings using GLFW."""
-        # Try to use the _settings values if they exist. Otherwise rely on defaults.
-        width = width if width else settings.window.width
-        height = height if height else settings.window.height
-
         window = glfw.create_window(width, height, title, None, None)
 
         if not window:
             glfw.terminate()
             raise WindowError(glfw_detail_error("GLFW create window failed"))
 
-        # Set the position of the window from the _settings session.
-        if "position" in settings.window:
-            glfw.set_window_pos(window, *settings.window.position)
+        self._try_set_position(window)
 
         glfw.make_context_current(window)
         glfw.swap_interval(0)
 
         return window
+
+    def _try_set_position(self, glfw_window) -> None:
+        """Try to set the position of the window from the settings.
+
+        The settings usually hold the position from the previous session. If this position is off
+        the screen, they are ignored.
+        """
+        if "position" not in settings.window:
+            return
+
+        # Get the size of the current monitor.
+        video_mode = glfw.get_video_mode(glfw.get_primary_monitor())
+
+        # Ensure that the top left corner of the window is actually going to be placed on the
+        # screen. Otherwise it may not be obvious to the user that the window even opened at all.
+        for position, maximum in zip(settings.window.position, video_mode.size):
+            if position < 0 or position > maximum:
+                logger.debug("Using default window. Saved position would place window off screen")
+                return
+
+        glfw.set_window_pos(glfw_window, *settings.window.position)
 
     def _update_settings(self) -> None:
         """Update and write the window settings.
@@ -101,6 +127,40 @@ class Window:
         )
 
         settings.write()
+
+    def _window_size(
+        self, passed_width: Optional[int], passed_height: Optional[int]
+    ) -> Tuple[int, int]:
+        """Return the proposed window height and width.
+
+        This method will try to provide valid values from the following sources in order:
+            - Size passed to the Window constructor in `height` and `width` keyword arguments
+            - Size saved in the `window` settings key under `height` and `width` keys.
+            - Default size hard-coded into the `Window` class (`Window.DEFAULT_...`)
+
+        A `WindowError` is raised if the size passed to the Window constructor is invalid.
+        """
+        # Always try to use what was provided to the constructor, unless it's not possible.
+        dimensions = {"width": passed_width, "height": passed_height}
+
+        for name, value in dimensions.items():
+            if value is not None and value <= 0:
+                raise WindowError(f"Provided window {name} must be positive. Got {value}")
+
+            # When no value is provided, try to uses the settings value. Otherwise use the defaults.
+            if value is None:
+                # Ensure the settings value is valid before using it.
+                settings_value = getattr(settings.window, name, 0)
+                if settings_value > 0:
+                    dimensions[name] = settings_value
+                else:
+                    logger.debug(
+                        "Using a default window %s value as the setting is not found or invalid",
+                        name,
+                    )
+                    dimensions[name] = getattr(Window, f"DEFAULT_{name.upper()}")
+
+        return dimensions.values()
 
     def _window_hints(self) -> None:
         """Set window hints."""
