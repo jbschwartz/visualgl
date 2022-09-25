@@ -29,42 +29,9 @@ class CameraController(controller.Controller):
         self.target = Vector3()
         self.orbit_type = OrbitType.CONSTRAINED
 
-    def cast_ray(self, cursor_position):
-        return self.camera.cast_ray(cursor_position)
-
     @controller.command
     def fit(self) -> None:
         self.camera.fit(self.scene.aabb)
-
-    @controller.command
-    def orbit_toggle(self) -> None:
-        self.orbit_type = (
-            OrbitType.FREE if self.orbit_type is OrbitType.CONSTRAINED else OrbitType.CONSTRAINED
-        )
-
-    def update_output_size(self, size: Vector3) -> None:
-        """Update the output size of the camera."""
-        assert size.x > 0 and size.y > 0, "Camera output size must be greater than zero."
-        self.camera.projection.resize(*size.xy)
-
-    @controller.command
-    def orbit(self, cursor_delta, scroll, direction: str) -> None:
-        pitch, yaw = (0, 0)
-        if direction == "left":
-            yaw = -settings.camera.orbit_step
-        elif direction == "right":
-            yaw = settings.camera.orbit_step
-        elif direction == "up":
-            pitch = -settings.camera.orbit_step
-        elif direction == "down":
-            pitch = settings.camera.orbit_step
-        elif scroll:
-            yaw = settings.camera.orbit_step * scroll.x
-        else:
-            cursor_delta.x = -cursor_delta.x
-            yaw, pitch = (settings.camera.orbit_speed * cursor_delta).xy
-
-        self.camera.orbit(self.target, pitch, yaw, self.orbit_type)
 
     @controller.command
     def normal_to(self) -> None:
@@ -110,6 +77,31 @@ class CameraController(controller.Controller):
         )
 
     @controller.command
+    def orbit(self, cursor_delta, scroll, direction: str) -> None:
+        pitch, yaw = (0, 0)
+        if direction == "left":
+            yaw = -settings.camera.orbit_step
+        elif direction == "right":
+            yaw = settings.camera.orbit_step
+        elif direction == "up":
+            pitch = -settings.camera.orbit_step
+        elif direction == "down":
+            pitch = settings.camera.orbit_step
+        elif scroll:
+            yaw = settings.camera.orbit_step * scroll.x
+        else:
+            cursor_delta.x = -cursor_delta.x
+            yaw, pitch = (settings.camera.orbit_speed * cursor_delta).xy
+
+        self.camera.orbit(self.target, pitch, yaw, self.orbit_type)
+
+    @controller.command
+    def orbit_toggle(self) -> None:
+        self.orbit_type = (
+            OrbitType.FREE if self.orbit_type is OrbitType.CONSTRAINED else OrbitType.CONSTRAINED
+        )
+
+    @controller.command
     def projection_toggle(self):
         """
         Switch the camera projection while maintaining "scale".
@@ -151,20 +143,55 @@ class CameraController(controller.Controller):
             desired = -self.camera.projection.matrix.elements[0] * width / 2
             delta = current.z - desired
 
-            if not self.dolly_will_clip(delta):
+            if not self._dolly_will_clip(delta):
                 self.camera.dolly(delta)
 
-    def dolly_will_clip(self, displacement: float) -> bool:
-        """Return True if dollying the provided amount will clip the scene."""
-        # Get the z value of the back of the scene in camera coordinates
-        camera_box_points = self.camera.world_to_camera(self.scene.aabb.corners)
-        back_of_scene = min(camera_box_points, key=lambda point: point.z)
+    @controller.command
+    def roll(self, cursor_position: Vector3, cursor_delta: Vector3, direction: str) -> float:
+        if direction == "cw":
+            self.camera.roll(-settings.camera.roll_step)
+        elif direction == "ccw":
+            self.camera.roll(settings.camera.roll_step)
+        else:
+            # Calculate the radius vector from center screen to initial cursor position.
+            radius = cursor_position - cursor_delta
 
-        # If we're dollying out, don't allow the camera to exceed the clipping plane
-        if displacement > 0 and (displacement - back_of_scene.z) > self.camera.projection.far_clip:
-            return True
+            if math.isclose(radius.length(), 0):
+                return 0
 
-        return False
+            # Calculate the unit tangent vector to the circle at cursor_start_point.
+            tangent = Vector3(radius.y, -radius.x).normalize()
+            # The contribution to the roll is the projection of the cursor_delta vector onto the
+            # tangent vector.
+            angle = settings.camera.roll_speed * cursor_delta * tangent
+            self.camera.roll(angle)
+
+    @controller.command
+    def scale(self, cursor_position, cursor_delta, scroll, direction: str) -> bool:
+        """Attempt to scale the scene by the given amount. Return True if the scale is successful.
+
+        Scaling is successful if it does not cause clipping in the scene.
+        """
+        if scroll:
+            self._scale_to_cursor(cursor_position, scroll.y * settings.camera.scale_in)
+            return False
+
+        if direction == "in":
+            amount = -settings.camera.scale_step
+        elif direction == "out":
+            amount = settings.camera.scale_step
+        else:
+            amount = settings.camera.scale_speed * cursor_delta.y
+
+        if isinstance(self.camera.projection, PerspectiveProjection):
+            if self._dolly_will_clip(amount):
+                return False
+
+            self.camera.dolly(amount)
+        else:
+            self.camera.projection.zoom(amount)
+
+        return True
 
     @controller.command
     def track(self, cursor_delta: Vector3, direction: str) -> None:
@@ -193,7 +220,36 @@ class CameraController(controller.Controller):
 
         self.camera.track(vector=-delta)
 
-    def scale_to_cursor(self, cursor: Vector3, direction: int) -> None:
+    @controller.command
+    def view(self, view_name: str) -> None:
+        view = self.VIEWS[view_name]
+
+        self.camera.look_at(
+            view["position"], view.get("target", Vector3(0, 0, 500)), view.get("up", Vector3.Z())
+        )
+        self.camera.fit(self.scene.aabb)
+
+    def cast_ray(self, cursor_position):
+        return self.camera.cast_ray(cursor_position)
+
+    def update_output_size(self, size: Vector3) -> None:
+        """Update the output size of the camera."""
+        assert size.x > 0 and size.y > 0, "Camera output size must be greater than zero."
+        self.camera.projection.resize(*size.xy)
+
+    def _dolly_will_clip(self, displacement: float) -> bool:
+        """Return True if dollying the provided amount will clip the scene."""
+        # Get the z value of the back of the scene in camera coordinates
+        camera_box_points = self.camera.world_to_camera(self.scene.aabb.corners)
+        back_of_scene = min(camera_box_points, key=lambda point: point.z)
+
+        # If we're dollying out, don't allow the camera to exceed the clipping plane
+        if displacement > 0 and (displacement - back_of_scene.z) > self.camera.projection.far_clip:
+            return True
+
+        return False
+
+    def _scale_to_cursor(self, cursor: Vector3, direction: int) -> None:
         cursor_camera_point = self.camera.camera_space(cursor)
 
         # This is delta z for perspective and delta width for orthographic
@@ -207,59 +263,3 @@ class CameraController(controller.Controller):
 
         if was_scaled:
             self.camera.track(delta_camera.x, delta_camera.y)
-
-    @controller.command
-    def roll(self, cursor: Vector3, cursor_delta: Vector3, direction: str) -> float:
-        if direction == "cw":
-            self.camera.roll(-settings.camera.roll_step)
-        elif direction == "ccw":
-            self.camera.roll(settings.camera.roll_step)
-        else:
-            # Calculate the radius vector from center screen to initial cursor position.
-            radius = cursor - cursor_delta
-
-            if math.isclose(radius.length(), 0):
-                return 0
-
-            # Calculate the unit tangent vector to the circle at cursor_start_point.
-            tangent = Vector3(radius.y, -radius.x).normalize()
-            # The contribution to the roll is the projection of the cursor_delta vector onto the
-            # tangent vector.
-            angle = settings.camera.roll_speed * cursor_delta * tangent
-            self.camera.roll(angle)
-
-    @controller.command
-    def scale(self, cursor_position, cursor_delta, scroll, direction: str) -> bool:
-        """Attempt to scale the scene by the given amount. Return True if the scale is successful.
-
-        Scaling is successful if it does not cause clipping in the scene.
-        """
-        if scroll:
-            self.scale_to_cursor(cursor_position, scroll.y * settings.camera.scale_in)
-            return False
-
-        if direction == "in":
-            amount = -settings.camera.scale_step
-        elif direction == "out":
-            amount = settings.camera.scale_step
-        else:
-            amount = settings.camera.scale_speed * cursor_delta.y
-
-        if isinstance(self.camera.projection, PerspectiveProjection):
-            if self.dolly_will_clip(amount):
-                return False
-
-            self.camera.dolly(amount)
-        else:
-            self.camera.projection.zoom(amount)
-
-        return True
-
-    @controller.command
-    def view(self, view_name: str) -> None:
-        view = self.VIEWS[view_name]
-
-        self.camera.look_at(
-            view["position"], view.get("target", Vector3(0, 0, 500)), view.get("up", Vector3.Z())
-        )
-        self.camera.fit(self.scene.aabb)
