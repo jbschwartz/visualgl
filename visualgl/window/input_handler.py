@@ -7,7 +7,7 @@ from visualgl.bindings import Bindings
 from visualgl.utils import sign
 
 from .exceptions import WindowError
-from .input_event import InputEvent
+from .input_event import InputEvent, InputEventType
 from .window import Window
 
 logger = logging.getLogger(__name__)
@@ -61,8 +61,11 @@ class InputHandler:
 
     def _emit(self, event: InputEvent) -> None:
         """Emit the provided event if a matching command is found."""
-        # Ignore key and button release & repeat events.
-        if event.action and event.action in [glfw.RELEASE, glfw.REPEAT]:
+        # Ignore key and button release and repeat events.
+        if event.event_type in [InputEventType.KEY, InputEventType.CLICK] and event.action in [
+            glfw.RELEASE,
+            glfw.REPEAT,
+        ]:
             return
 
         if command := self.bindings.command(event):
