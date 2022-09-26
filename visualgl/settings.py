@@ -172,6 +172,7 @@ settings = Settings(
             "bindings",
             **{
                 "camera.fit": "f",
+                "camera.lock_toggle": "ctrl+shift+o",
                 "camera.normal_to": "v",
                 "camera.orbit": "button_middle, scroll_horizontal",
                 "camera.orbit.down": "down",

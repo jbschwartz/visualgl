@@ -28,10 +28,15 @@ class CameraController(controller.Controller):
 
         self.target = Vector3()
         self.orbit_type = OrbitType.CONSTRAINED
+        self.is_locked = False
 
     @controller.command
     def fit(self) -> None:
         self.camera.fit(self.scene.aabb)
+
+    @controller.command
+    def lock_toggle(self) -> None:
+        self.is_locked = not self.is_locked
 
     @controller.command
     def normal_to(self) -> None:
@@ -78,6 +83,9 @@ class CameraController(controller.Controller):
 
     @controller.command
     def orbit(self, cursor_delta, scroll, direction: str) -> None:
+        if self.is_locked:
+            return
+
         pitch, yaw = (0, 0)
         if direction == "left":
             yaw = -settings.camera.orbit_step
@@ -148,6 +156,9 @@ class CameraController(controller.Controller):
 
     @controller.command
     def roll(self, cursor_position: Vector3, cursor_delta: Vector3, direction: str) -> float:
+        if self.is_locked:
+            return
+
         if direction == "cw":
             self.camera.roll(-settings.camera.roll_step)
         elif direction == "ccw":
@@ -222,6 +233,9 @@ class CameraController(controller.Controller):
 
     @controller.command
     def view(self, view_name: str) -> None:
+        if self.is_locked:
+            return
+
         view = self.VIEWS[view_name]
 
         self.camera.look_at(
