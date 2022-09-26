@@ -250,16 +250,16 @@ class CameraController(controller.Controller):
         return False
 
     def _scale_to_cursor(self, cursor: Vector3, direction: int) -> None:
-        cursor_camera_point = self.camera.camera_space(cursor)
+        cursor_camera_point = self.camera.camera_space(cursor).normalize()
 
         # This is delta z for perspective and delta width for orthographic
         delta_scale = direction * settings.camera.scale_step
-        delta_camera = -cursor_camera_point * delta_scale
+        delta_camera = cursor_camera_point * (delta_scale / cursor_camera_point.z)
 
         if isinstance(self.camera.projection, OrthoProjection):
             delta_camera /= self.camera.projection.width
 
         was_scaled = self.scale(None, Vector3(0, delta_scale), None, None)
 
-        if was_scaled:
+        if was_scaled and delta_scale < 0:
             self.camera.track(delta_camera.x, delta_camera.y)
