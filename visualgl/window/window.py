@@ -68,6 +68,9 @@ class Window:
         if event.cursor_position:
             event.cursor_position.y = self.size.y - event.cursor_position.y
 
+        if event.cursor_delta:
+            event.cursor_delta.y = -event.cursor_delta.y
+
         if event.event_type is InputEventType.RESIZE:
             # Invalidate the cached window size now that the window has changed.
             if self.size:
