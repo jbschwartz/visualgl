@@ -4,6 +4,8 @@ import math
 import os
 from typing import Any, Dict, Generator, List, Tuple
 
+from .exceptions import SettingsError
+
 logger = logging.getLogger(__name__)
 
 
@@ -114,6 +116,8 @@ class Settings:
                         self._namespaces[name].update(dictionary)
         except FileNotFoundError:
             return
+        except json.decoder.JSONDecodeError as e:
+            raise SettingsError(f"Invalid settings file: {e}") from e
 
     def write(self) -> None:
         """Write the current settings to a file in the settings directory.
