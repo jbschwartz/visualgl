@@ -3,7 +3,7 @@ from typing import Iterator, List
 
 from spatial3d import Vector3
 
-from .input_event import InputEvent
+from .input_event import InputEvent, InputEventType
 from .viewport import Viewport
 
 
@@ -23,7 +23,7 @@ class Layout(abc.ABC):
         return self._viewports
 
     @abc.abstractmethod
-    def event(self, event: InputEvent) -> None:
+    def on_event(self, event: InputEvent) -> None:
         """Respond to the provided input event.
 
         Called by the window when raw mouse and keyboard events are captured.
@@ -35,3 +35,14 @@ class Layout(abc.ABC):
 
         This method is also responsible for resizing all child viewports.
         """
+
+    def event(self, event: InputEvent) -> None:
+        """Respond to the provided input event.
+
+        Child classes of Layout should not override this function. Instead they should implement
+        the `on_event` function which is called here.
+        """
+        if event.event_type is InputEventType.RESIZE:
+            self.resize(event.size)
+
+        self.on_event(event)

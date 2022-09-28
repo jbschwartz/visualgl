@@ -75,10 +75,8 @@ class Window:
             # Invalidate the cached window size now that the window has changed.
             if self.size:
                 del self.size
-            # Inform the layout that the window has changed so that viewports can also be scaled.
-            self.layout.resize(event.size)
-        else:
-            self.layout.event(event)
+
+        self.layout.event(event)
 
     def _create_window(self, title: str, width: int, height: int) -> None:
         """Create the window with the provided settings using GLFW."""

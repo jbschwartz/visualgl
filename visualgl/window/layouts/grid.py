@@ -52,7 +52,7 @@ class Grid(Layout):
         """Return the number of cells in the grid."""
         return len(self.row_heights) * len(self.column_widths)
 
-    def event(self, event: InputEvent) -> None:
+    def on_event(self, event: InputEvent) -> None:
         """Handle the input event."""
         # Identify which viewport was clicked on.
         if event.event_type is InputEventType.CLICK:
