@@ -1,6 +1,6 @@
 from spatial3d import Vector3
 
-from visualgl.camera import CameraController
+from visualgl.camera import CameraController, CameraView
 from visualgl.scene import Scene
 
 from ..input_event import InputEvent, InputEventType
@@ -10,11 +10,13 @@ from ..viewport import Viewport
 class SceneViewport(Viewport):
     """A viewport for displaying a scene (collection of object) with a controllable camera."""
 
-    def __init__(self, scene: Scene, camera: CameraController = None):
+    def __init__(self, scene: Scene, camera: CameraController = None, **kwargs):
         super().__init__()
 
         self.scene = scene
         self.camera = camera or CameraController(self.scene)
+
+        self.settings = kwargs
 
     def on_event(self, event: InputEvent) -> None:
         """Pass the event onto the Camera."""
@@ -38,7 +40,8 @@ class SceneViewport(Viewport):
     def _initialize_camera(self) -> None:
         if len(self.scene.entities) > 0:
             self.camera.target = self.scene.aabb.center
-        self.camera.view("iso")
+
+        self.camera.view(self.settings.get("default_view", CameraView.ISOMETRIC))
 
     def _update_camera_target(self, cursor_position: Vector3) -> None:
         ray = self.camera.cast_ray(cursor_position)
