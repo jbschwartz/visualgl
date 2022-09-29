@@ -14,13 +14,13 @@ class Viewport(abc.ABC):
     with the content and display of the viewport.
     """
 
-    def __init__(self):
+    def __init__(self, position: Optional[Vector3] = None, size: Optional[Vector3] = None):
         # The location in pixels of the bottom-left corner of the viewport with respect to the
         # bottom-left corner of the full window.
-        self.position: Optional[Vector3] = None
+        self.position = position
 
         # The width (`self.size.x`) and height (`self.size.y`) of the viewport in pixels.
-        self.size: Optional[Vector3] = None
+        self.size = size
 
     def __contains__(self, position: Vector3) -> bool:
         """Return True if the pixel position is contained in the viewport."""
@@ -112,7 +112,9 @@ class Viewport(abc.ABC):
 
         The third component of the returned vector is always set to 0.
         """
-        viewport_position = cursor_position - self.position + round(self.size, 0)
+        viewport_position = cursor_position - self.position
+
         return Vector3(
-            2 * viewport_position.x / self.size.x - 1, 1 - 2 * viewport_position.y / self.size.y
+            2 * viewport_position.x / (self.size.x - 1) - 1,
+            2 * viewport_position.y / (self.size.y - 1) - 1,
         )
