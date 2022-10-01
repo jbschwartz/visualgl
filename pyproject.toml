@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "visualgl"
-version = "0.0.1"
+version = "0.0.2"
 description = "A Python library for visualizations with OpenGL."
 authors = ["James Schwartz <james@schwartz.engineer>"]
 keywords = ["opengl", "glfw", "3d", "scene", "mesh"]
