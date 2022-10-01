@@ -40,8 +40,7 @@ class SceneViewport(Viewport):
     def _initialize_camera(self) -> None:
         if len(self.scene.entities) > 0:
             self.camera.target = self.scene.aabb.center
-
-        self.camera.view(self.settings.get("default_view", CameraView.ISOMETRIC))
+            self.camera.view(self.settings.get("default_view", CameraView.ISOMETRIC))
 
     def _update_camera_target(self, cursor_position: Vector3) -> None:
         ray = self.camera.cast_ray(cursor_position)

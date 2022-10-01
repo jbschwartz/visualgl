@@ -108,7 +108,12 @@ class Camera:
         up_direction = up_direction or Vector3.Z()
 
         # Negated since the camera looks down the negative Z axis.
-        forward = -(target - position).normalize()
+        try:
+            forward = -(target - position).normalize()
+        except ZeroDivisionError as e:
+            raise CameraError(
+                "Provided up target is ambiguous; it is coincident with the camera's position"
+            ) from e
 
         try:
             right = (up_direction % forward).normalize()
